@@ -21,7 +21,10 @@ int main(int argc, char *argv[]){
     char input_file[] = "../inputs/"; ///< Sets input directory to ../inputs/ 
     strcat(input_file, argv[1]);
 	
-    printf("Using %s to determine simulation parameters.\n", input_file);
+    printf("### Using %s to determine simulation parameters.\n", input_file);
+    #ifdef DEBUG
+    printf("### DEBUG mode is on.\n");
+    #endif 
 
     // (Try to) Generate configuration object from input file.
     libconfig::Config config;
@@ -72,7 +75,25 @@ int main(int argc, char *argv[]){
         exit(EXIT_FAILURE);
     }
 
-    
+    #ifdef DEBUG
+    // Print out scaling params
+    printf("### Scaling Parameters\n");
+    printf("Cells/Population:\t %d\n", sq.N);
+    printf("Diffusion Const:\t %g\n", sq.D);
+    printf("Cell Diameter:\t\t %g\n", sq.u_length);
+    printf("Unit Energy:\t\t %g\n", sq.u_energy);
+    printf("Unit Time:\t\t %g\n", sq.D);
+
+    // Print out dimensionless params
+    printf("### Dimensionless Parameters\n");
+    printf("Packing Fraction:\t %g\n", pac_frac);
+    printf("Bounding Radius:\t %g\n", dq.Rb);
+    printf("Time Step:\t\t %g\n", dq.dt);    
+    printf("Simulation Duration:\t %g\n", dq.tf);    
+    printf("Propulsions [H,C]:\t [%g,%g]\n", dq.prop_H, dq.prop_C);    
+    printf("Repulsions [H,C]:\t [%g,%g]\n", dq.rep_H, dq.rep_C);    
+    printf("Adhesions [HH,HC,CC]:\t [%g,%g,%g]\n",dq.adh_HH,dq.adh_HC,dq.adh_CC);    
+    #endif 
     return EXIT_SUCCESS; 
 }
   
