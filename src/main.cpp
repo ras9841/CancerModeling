@@ -10,7 +10,7 @@
 
 /*! Usage error message. */
 void print_usage() {
-    printf("Error with usage: ./run filename test_tag\n"); 
+    printf("Error with usage: ./run input_file output_file\n"); 
     exit(EXIT_FAILURE);
 }
 
