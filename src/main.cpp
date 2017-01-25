@@ -1,27 +1,36 @@
-#include <iostream>
-#include <cstdlib>
 #include <math.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <string.h> 
+#include <string>
+#include <cstring>
+#include <sstream>
 #include <libconfig.h++>
-
 #include "params.hpp"
+#include "simulation.hpp"
 
 /*! Usage error message. */
 void print_usage() {
-    printf("Error with usage: ./run filename\n"); 
+    printf("Error with usage: ./run filename test_tag\n"); 
     exit(EXIT_FAILURE);
 }
 
 /*! Main function for the co-culture simulation, */
 int main(int argc, char *argv[]){
-    if (argc != 2) { print_usage(); }
+    if (argc != 3) { print_usage(); }
 	
-    char input_file[] = "../inputs/"; ///< Sets input directory to ../inputs/ 
-    strcat(input_file, argv[1]);
-	
-    printf("### Using %s to determine simulation parameters.\n", input_file);
+    std::stringstream in_input;
+    std::stringstream in_output;
+    in_input << "../inputs/" << argv[1];
+    in_output << "../outputs/" << argv[2] << ".csv";
+    std::string input_str = in_input.str();
+    std::string output_str = in_output.str();
+    char *input = new char[input_str.length() + 1];
+    char *output = new char[output_str.length() + 1];
+    std::strcpy(input, input_str.c_str());
+    std::strcpy(output, output_str.c_str());
+
+    printf("### Using %s to determine simulation parameters\n", input);
+    printf("### Writing cell locations to %s \n", output);
     #ifdef DEBUG
     printf("### DEBUG mode is on.\n");
     #endif 
@@ -29,7 +38,7 @@ int main(int argc, char *argv[]){
     // (Try to) Generate configuration object from input file.
     libconfig::Config config;
     try {
-        config.readFile(input_file);
+        config.readFile(input);
     } 
     catch (const libconfig::FileIOException &ferr) {
         fprintf(stderr, "Error with input file IO: invalid read.\n");
@@ -58,7 +67,7 @@ int main(int argc, char *argv[]){
 
         // Process remaining settings and create a dimensionless structure
         pac_frac = config.lookup("Packing_Fraction");
-        dq.Rb = sq.u_length*cbrt(sq.N/(4*pac_frac));
+        dq.Rb = sq.u_length*cbrt((4*sq.N)/pac_frac);
         dq.dt = config.lookup("Time_Step"); // already unitless
         dq.tf = config.lookup("Simulation_Duration"); // already unitless
         dq.prop_H = config.lookup("Propulsion_H");
@@ -94,6 +103,12 @@ int main(int argc, char *argv[]){
     printf("Repulsions [H,C]:\t [%g,%g]\n", dq.rep_H, dq.rep_C);    
     printf("Adhesions [HH,HC,CC]:\t [%g,%g,%g]\n",dq.adh_HH,dq.adh_HC,dq.adh_CC);    
     #endif 
+
+    Simulation sim (output, sq, dq);
+    sim.run(sq, dq);
+
+    delete [] input;
+    delete [] output;
     return EXIT_SUCCESS; 
 }
   
