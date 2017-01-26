@@ -32,7 +32,7 @@ int main(int argc, char *argv[]){
     printf("### Using %s to determine simulation parameters\n", input);
     printf("### Writing cell locations to %s \n", output);
     #ifdef DEBUG
-    printf("### DEBUG mode is on.\n");
+    printf("### DEBUG mode: %s\n", DEBUG);
     #endif 
 
     // (Try to) Generate configuration object from input file.
@@ -91,7 +91,7 @@ int main(int argc, char *argv[]){
     printf("Diffusion Const:\t %g\n", sq.D);
     printf("Cell Diameter:\t\t %g\n", sq.u_length);
     printf("Unit Energy:\t\t %g\n", sq.u_energy);
-    printf("Unit Time:\t\t %g\n", sq.D);
+    printf("Unit Time:\t\t %g\n", sq.u_time);
 
     // Print out dimensionless params
     printf("### Dimensionless Parameters\n");

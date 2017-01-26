@@ -12,15 +12,20 @@ public:
     double x;
     double y;
     double z;
-    double vx;
-    double vy;
-    double vz;
     double Fx;
     double Fy;
     double Fz;
-    std::vector<Cell> adjlst;
+    double dXdt;
+    double dYdt;
+    double dZdt;
+    double theta;   // [0,2*pi] (vp orientation)
+    double phi;     // [0,pi]   (cp orientation)
+    std::vector<int> adjlst;
     // methods
-    Cell(int id, CellType type, double x, double y, double z);
+    Cell(int id, CellType type, double x, double y, 
+            double z, double theta, double phi);
     const char *get_type();
+    int hits(Cell c, double diam);
+    int is_type(CellType t); 
 };
 #endif

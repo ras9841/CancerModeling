@@ -12,21 +12,21 @@ main.o : main.cpp params.hpp
 ifeq ($(DEBUG), off)
 	$(CC) $(CFLAGS) main.cpp params.hpp
 else
-	$(CC) $(CFLAGS) -DDEBUG main.cpp params.hpp
+	$(CC) $(CFLAGS) -DDEBUG=\"$(DEBUG)\" main.cpp params.hpp
 endif
 
 cells.o : cells.cpp cells.hpp 
 ifeq ($(DEBUG), off)
 	$(CC) $(CFLAGS) cells.cpp cells.hpp
 else
-	$(CC) $(CFLAGS) -DDEBUG cells.cpp cells.hpp
+	$(CC) $(CFLAGS) -DDEBUG=\"$(DEBUG)\" cells.cpp cells.hpp
 endif
 
 simulation.o : simulation.cpp simulation.hpp 
 ifeq ($(DEBUG), off)
 	$(CC) $(CFLAGS) simulation.cpp simulation.hpp
 else
-	$(CC) $(CFLAGS) -DDEBUG simulation.cpp simulation.hpp
+	$(CC) $(CFLAGS) -DDEBUG=\"$(DEBUG)\" simulation.cpp simulation.hpp
 endif
 
 clean:

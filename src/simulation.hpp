@@ -4,15 +4,20 @@
 #include "cells.hpp"
 #include "params.hpp"
 #include <vector>
+#include <random>
 #include <stdio.h>
 
 class Simulation {
     std::vector<Cell> cells;
     unsigned int base_seed;
-    void write_cell_loc(FILE *, double);
+    std::normal_distribution<double> norm_dist;
+    std::default_random_engine theta_gen;
+    std::default_random_engine phi_gen;
+    std::default_random_engine rho_gen;
+    void write_cell_loc(FILE *, double, Params::ScalingQuants);
     void find_collisions(Params::ScalingQuants sq);
-    void calc_forces();
-    void update_locs();
+    void calc_forces(Params::DimensionlessQuants qd);
+    void update_locs(Params::ScalingQuants, Params:: DimensionlessQuants);
 public:
     const char *filename;
     // methods
