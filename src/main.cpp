@@ -67,7 +67,7 @@ int main(int argc, char *argv[]){
 
         // Process remaining settings and create a dimensionless structure
         pac_frac = config.lookup("Packing_Fraction");
-        dq.Rb = sq.u_length*cbrt((4*sq.N)/pac_frac);
+        dq.Rb = cbrt((4*sq.N)/pac_frac);
         dq.dt = config.lookup("Time_Step"); // already unitless
         dq.tf = config.lookup("Simulation_Duration"); // already unitless
         dq.prop_H = config.lookup("Propulsion_H");

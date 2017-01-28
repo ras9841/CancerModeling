@@ -9,7 +9,7 @@ Simulation::Simulation(const char *name, Params::ScalingQuants sq,
     const double pi = std::atan(1)*4;
     double R = dq.Rb;
     #ifdef DEBUG
-        R = .5*dq.Rb;
+        R = .2*dq.Rb;
     #endif
 
     // Initialize attributes
@@ -83,9 +83,9 @@ Simulation::Simulation(const char *name, Params::ScalingQuants sq,
 void Simulation::write_cell_loc(FILE *file, double time, 
                                 Params::ScalingQuants sq) {
     for (unsigned int i=0; i<this->cells.size(); i++) {
-        fprintf(file, "%.6f\t%d\t", time*sq.u_time, cells[i].id+1);
-        fprintf(file, "%s\t%.6f\t", cells[i].get_type(), cells[i].x*sq.u_length);
-        fprintf(file, "%f\t%f\n",cells[i].y*sq.u_length, cells[i].z*sq.u_length);
+        fprintf(file, "%.6f\t%d\t", time, cells[i].id+1);
+        fprintf(file, "%s\t%.6f\t", cells[i].get_type(), cells[i].x);
+        fprintf(file, "%f\t%f\n", cells[i].y, cells[i].z);
     }
 }
 
@@ -116,9 +116,9 @@ void Simulation::update_locs(Params::ScalingQuants sq, Params::DimensionlessQuan
     for (unsigned int i=0; i<this->cells.size(); i++) {
         #ifdef DEBUG
         if (DEBUG == "brownian") {
-            cells[i].dXdt = (sq.u_length*sqrt(2.0/sq.D))*norm_dist(rho_gen);
-            cells[i].dYdt = (sq.u_length*sqrt(2.0/sq.D))*norm_dist(rho_gen);
-            cells[i].dZdt = (sq.u_length*sqrt(2.0/sq.D))*norm_dist(rho_gen);
+            cells[i].dXdt = (sq.u_length*sqrt(2.0/(sq.D*dq.dt*sq.u_time)))*norm_dist(rho_gen);
+            cells[i].dYdt = (sq.u_length*sqrt(2.0/(sq.D*dq.dt*sq.u_time)))*norm_dist(rho_gen);
+            cells[i].dZdt = (sq.u_length*sqrt(2.0/(sq.D*dq.dt*sq.u_time)))*norm_dist(rho_gen);
         }
         else if (DEBUG == "spp") {
             if (cells[i].is_type(H)) {
@@ -133,7 +133,6 @@ void Simulation::update_locs(Params::ScalingQuants sq, Params::DimensionlessQuan
             }
         }
         #else
-        // Apply interaction forces
         cells[i].dXdt = (sq.u_length/sq.u_energy)*cells[i].Fx;
         cells[i].dYdt = (sq.u_length/sq.u_energy)*cells[i].Fy;
         cells[i].dZdt = (sq.u_length/sq.u_energy)*cells[i].Fz;
@@ -158,6 +157,7 @@ void Simulation::update_locs(Params::ScalingQuants sq, Params::DimensionlessQuan
         xnew = cells[i].x + dq.dt*cells[i].dXdt;
         ynew = cells[i].y + dq.dt*cells[i].dYdt;
         znew = cells[i].z + dq.dt*cells[i].dZdt;
+
         // Validity check: stay in sphere
         if (pow(xnew,2)+pow(ynew,2)+pow(znew,2) < pow(dq.Rb,2))
         {
