@@ -1,3 +1,11 @@
+/*
+ * File:    main.cpp
+ * Author:  Allen Sanford (ras9841@rit.edu)
+ * Description:
+ *      Deals with setting up, cleaning up, and running the simulation.
+ */
+
+// Includes
 #include <math.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -8,13 +16,21 @@
 #include "params.hpp"
 #include "simulation.hpp"
 
-/*! Usage error message. */
+/// Prints a message defining proper commandline usage. 
 void print_usage() {
     printf("Error with usage: ./run input_file output_file\n"); 
     exit(EXIT_FAILURE);
 }
 
-/*! Main function for the co-culture simulation, */
+/// Main function for the co-culture simulation
+///
+/// Deals with reading in the input configuration file, creating the simulation,
+/// displaying results to standard out/error, and cleanup. Memory for arrays 
+/// containing the input and output filenames is allocated and freed internally.
+///
+/// Keyword Arguments:
+///     argc    --  number of commandline arguments (should be three)
+///     argv    --  commandline entries (2nd is input file, 3rd is output file)
 int main(int argc, char *argv[]){
     if (argc != 3) { print_usage(); }
 	

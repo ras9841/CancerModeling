@@ -1,3 +1,10 @@
+/*
+ * File:    simulation.hpp
+ * Author:  Allen Sanford (ras9841@rit.edu)
+ * Description:
+ *      Outlines the Simulation class definition implemented in simulation.cpp
+ */
+
 #ifndef __SIMULATION__
 #define __SIMULATION__
 
@@ -14,7 +21,7 @@ class Simulation {
     std::default_random_engine theta_gen;
     std::default_random_engine phi_gen;
     std::default_random_engine rho_gen;
-    void write_cell_loc(FILE *, double, Params::ScalingQuants);
+    void write_cell_loc(FILE *, double);
     void find_collisions(Params::ScalingQuants sq);
     void calc_forces(Params::DimensionlessQuants qd);
     void update_locs(Params::ScalingQuants, Params:: DimensionlessQuants);

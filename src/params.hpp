@@ -1,3 +1,11 @@
+/*
+ * File:    params.hpp
+ * Author:  Allen Sanford (ras9841@rit.edu)
+ * Description:
+ *      Defines the scaling and dimensionless parameters used in the simulaiton.
+ *      Both structs are wrapped in the Params namespace for readability.
+ */
+
 #ifndef __PARAMS__
 #define __PARAMS__
 namespace Params {

@@ -1,7 +1,30 @@
+/*
+ * File:    simulation.cpp
+ * Author:  Allen Sanford (ras9841@rit.edu)
+ * Description:
+ *      Defines the simulation class and its methods.
+ *      Contains all logic for the simlutaion.
+ */
+
+// Imports
 #include "simulation.hpp"
 #include <time.h>
 #include <math.h>
 
+/// Constructor for a Simulation objection.
+///
+/// The initial setup for the simulation is created using the values specified 
+/// by the scaling and dimensionless quantities. The cells are scattered 
+/// uniformly throughout the volume of bounding sphere. The coordinates are 
+/// initially generated using spherical coordinates (each with an independent 
+/// distribution) but are saved in the cells in cartesian coordinates in order 
+/// to match the force model. All random generation is based off a base seed, 
+/// which is generated based on the computing system's time.
+///
+/// Keyword Arguments:
+///     name    --  name used for output files.
+///     sq      --  scaling quantities used for length, time, and energy scales.
+///     dq      --  dimensionless quantities used in the simulation
 Simulation::Simulation(const char *name, Params::ScalingQuants sq,
                         Params::DimensionlessQuants dq)
 {
@@ -80,8 +103,15 @@ Simulation::Simulation(const char *name, Params::ScalingQuants sq,
     }
 }
 
-void Simulation::write_cell_loc(FILE *file, double time, 
-                                Params::ScalingQuants sq) {
+/// Updates the results file with the current state of the system.
+///
+/// The output quantities (time,x,y,z) are with respect to the scaling
+/// quantities ulength and utime.
+///
+/// Keyword Arguments:
+///     file    --  file pointer to the output data location.
+///     time    --  current time in units of tau
+void Simulation::write_cell_loc(FILE *file, double time) { 
     for (unsigned int i=0; i<this->cells.size(); i++) {
         fprintf(file, "%.6f\t%d\t", time, cells[i].id+1);
         fprintf(file, "%s\t%.6f\t", cells[i].get_type(), cells[i].x);
@@ -89,7 +119,14 @@ void Simulation::write_cell_loc(FILE *file, double time,
     }
 }
 
-
+/// Finds all cells in the current simulation state that are colliding.
+///
+/// Current implementation in a brute force O(N^2) direct comparison. Collided 
+/// cells are added to the cells' adjacency list for future use in the force
+/// calculations.
+///
+/// Keyword Arguments:
+///     sq  --  scaling quantities (used for unit length)
 void Simulation::find_collisions(Params::ScalingQuants sq) {
     for (unsigned int i=0; i<this->cells.size(); i++) {
         cells[i].adjlst.clear();
@@ -103,6 +140,13 @@ void Simulation::find_collisions(Params::ScalingQuants sq) {
     }
 }
 
+/// Calculates the adhesive and repulsive forces for each cell.
+///
+/// Currently, these interactions are set to zero. Future versions will include
+/// the JKR model for adhesion and repulsion.
+///
+/// Keywork Arguments:
+///     dq  --  demensionless quantities used in force calculation.
 void Simulation::calc_forces(Params::DimensionlessQuants dq) {
     for (unsigned int i=0; i<this->cells.size(); i++) {
         cells[i].Fx = 0;
@@ -111,6 +155,15 @@ void Simulation::calc_forces(Params::DimensionlessQuants dq) {
     }
 }
 
+/// Update cell positions by integrating the 3D Langevin equations.
+///
+/// Currently, forces contributing to the particles velocity include Brownian 
+/// motion, self-propulsion, cell-cell adhession, and cell-cell repulsion. The
+/// numerical integration is done with Forward Euler O(dt).
+///
+/// Keyword Arguments:
+///     sq  --  scaling quantity used to nondimensionalize the force equations
+///     dq  --  demensionless quantities used in force calculation.
 void Simulation::update_locs(Params::ScalingQuants sq, Params::DimensionlessQuants dq) {
     double xnew, ynew, znew;
     for (unsigned int i=0; i<this->cells.size(); i++) {
@@ -122,9 +175,9 @@ void Simulation::update_locs(Params::ScalingQuants sq, Params::DimensionlessQuan
         }
         else if (DEBUG == "spp") {
             if (cells[i].is_type(H)) {
-                cells[i].dXdt = (dq.prop_H*cos(cells[i].theta)*sin(cells[i].phi))/sqrt(3);
-                cells[i].dYdt = (dq.prop_H*sin(cells[i].theta)*sin(cells[i].phi))/sqrt(3);
-                cells[i].dZdt = (dq.prop_H*cos(cells[i].phi))/sqrt(3);
+                cells[i].dXdt = (sq.u_length/sq.D)*(dq.prop_H*cos(cells[i].theta)*sin(cells[i].phi))/sqrt(3);
+                cells[i].dYdt = (sq.u_length/sq.D)*(dq.prop_H*sin(cells[i].theta)*sin(cells[i].phi))/sqrt(3);
+                cells[i].dZdt = (sq.u_length/sq.D)*(dq.prop_H*cos(cells[i].phi))/sqrt(3);
             }
             else {
                 cells[i].dXdt = (sq.u_length/sq.D)*(dq.prop_C*cos(cells[i].theta)*sin(cells[i].phi))/sqrt(3);
@@ -138,19 +191,19 @@ void Simulation::update_locs(Params::ScalingQuants sq, Params::DimensionlessQuan
         cells[i].dZdt = (sq.u_length/sq.u_energy)*cells[i].Fz;
         // Apply self propulsion
         if (cells[i].is_type(H)) {
-            cells[i].dXdt += (dq.prop_H*cos(cells[i].theta)*sin(cells[i].phi))/sqrt(3);
-            cells[i].dYdt += (dq.prop_H*sin(cells[i].theta)*sin(cells[i].phi))/sqrt(3);
-            cells[i].dZdt += (dq.prop_H*cos(cells[i].phi))/sqrt(3);
+            cells[i].dXdt = (sq.u_length/sq.D)*(dq.prop_H*cos(cells[i].theta)*sin(cells[i].phi))/sqrt(3);
+            cells[i].dYdt = (sq.u_length/sq.D)*(dq.prop_H*sin(cells[i].theta)*sin(cells[i].phi))/sqrt(3);
+            cells[i].dZdt = (sq.u_length/sq.D)*(dq.prop_H*cos(cells[i].phi))/sqrt(3);
         }
         else {
-            cells[i].dXdt += (sq.u_length/sq.D)*(sq.u_length/sq.D)*(dq.prop_C*cos(cells[i].theta)*sin(cells[i].phi))/sqrt(3);
-            cells[i].dYdt += (sq.u_length/sq.D)*(dq.prop_C*sin(cells[i].theta)*sin(cells[i].phi))/sqrt(3);
-            cells[i].dZdt += (sq.u_length/sq.D)*(dq.prop_C*cos(cells[i].phi))/sqrt(3);
+            cells[i].dXdt = (sq.u_length/sq.D)*(dq.prop_C*cos(cells[i].theta)*sin(cells[i].phi))/sqrt(3);
+            cells[i].dYdt = (sq.u_length/sq.D)*(dq.prop_C*sin(cells[i].theta)*sin(cells[i].phi))/sqrt(3);
+            cells[i].dZdt = (sq.u_length/sq.D)*(dq.prop_C*cos(cells[i].phi))/sqrt(3);
         }
         // Apply diffusion
-        cells[i].dXdt += (sq.u_length*sqrt(2.0/sq.D))*norm_dist(rho_gen);
-        cells[i].dYdt += (sq.u_length*sqrt(2.0/sq.D))*norm_dist(rho_gen);
-        cells[i].dZdt += (sq.u_length*sqrt(2.0/sq.D))*norm_dist(rho_gen);
+        cells[i].dXdt = (sq.u_length*sqrt(2.0/(sq.D*dq.dt*sq.u_time)))*norm_dist(rho_gen);
+        cells[i].dYdt = (sq.u_length*sqrt(2.0/(sq.D*dq.dt*sq.u_time)))*norm_dist(rho_gen);
+        cells[i].dZdt = (sq.u_length*sqrt(2.0/(sq.D*dq.dt*sq.u_time)))*norm_dist(rho_gen);
         #endif
         
         // Update positions and orientations (forward euler)
@@ -165,12 +218,24 @@ void Simulation::update_locs(Params::ScalingQuants sq, Params::DimensionlessQuan
             cells[i].y = cells[i].y + dq.dt*cells[i].dYdt;
             cells[i].z = cells[i].z + dq.dt*cells[i].dZdt;
         }
-        cells[i].theta += dq.dt*(sq.u_length*sqrt(6/sq.D))*norm_dist(theta_gen);
-        cells[i].phi += dq.dt*(sq.u_length*sqrt(6/sq.D))*norm_dist(theta_gen);
+
+        // Update theta and phi
+        cells[i].theta += dq.dt*(sq.u_length*sqrt(6/(sq.D*dq.dt*sq.u_time)))*norm_dist(theta_gen);
+        cells[i].phi += dq.dt*(sq.u_length*sqrt(6/(sq.D*dq.dt*sq.u_time)))*norm_dist(theta_gen);    
     }
 }
 
-
+/// Logic for running the simulation
+/// 
+/// Creates the filename used to write out particle position. This includes 
+/// opening and closing the file pointer. Order of operations: (1) write out
+/// current cell locations, (2) find cells that are colliding, (3) calculate
+/// the adhesive and repulsive forces acting on each cell, and (4) update
+/// the particle locations.
+///
+/// Keyword Arguments:
+///     sq  --  scaling quantity used to nondimensionalize the force equations
+///     dq  --  demensionless quantities used in force calculation.
 void Simulation::run(Params::ScalingQuants sq, Params::DimensionlessQuants dq) {
     // Get current time
     time_t rawtime;
@@ -189,13 +254,13 @@ void Simulation::run(Params::ScalingQuants sq, Params::DimensionlessQuants dq) {
 
     double t = 0;
     while (t < dq.tf) {
-        write_cell_loc(file, t, sq);        
+        write_cell_loc(file, t);        
         find_collisions(sq);
         calc_forces(dq);
         update_locs(sq, dq);
         t += dq.dt;
     }
-    write_cell_loc(file, t, sq);        
+    write_cell_loc(file, t);        
 
     fclose(file);
 }
