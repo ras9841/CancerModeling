@@ -13,6 +13,7 @@
 #include <vector>
 #include <random>
 #include <stdio.h>
+#include <math.h>
 
 class Simulation {
     // attributes
@@ -24,6 +25,7 @@ class Simulation {
     std::default_random_engine rho_gen;
     Params::SysQuants sq; 
     Params::DimensionlessQuants dq;
+    const double pi = std::atan(1)*4.0;
 
     // methods
     void write_cell_loc(FILE *, double);

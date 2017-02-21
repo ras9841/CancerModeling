@@ -69,10 +69,13 @@ int Cell::is_type(CellType tp) {
 ///     c       --  cell potentially colliding with this cell.
 int Cell::hits(Cell c) {
     double scale = c.R > this->R ? c.R : this->R;
-    if (sqrt(pow(c.x-this->x,2)+pow(c.y-this->y,2)+pow(c.z-this->z,2)) > scale){
-        return 0;
-    } 
-    else {
-        return 1;
-    }
+    return distance_to(c) < scale ? 1 : 0;
+}
+
+double Cell::distance_to(Cell c) {
+    return sqrt(pow(x-c.x,2)+pow(y-c.y,2)+pow(z-c.z,2));
+}
+
+double Cell::get_rho() {
+    return sqrt(pow(x,2)+pow(y,2)+pow(z,2));
 }

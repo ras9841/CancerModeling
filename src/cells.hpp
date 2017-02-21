@@ -43,5 +43,7 @@ public:
     const char *get_type();
     int hits(Cell c);
     int is_type(CellType t); 
+    double distance_to(Cell c);
+    double get_rho();
 };
 #endif

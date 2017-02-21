@@ -70,7 +70,7 @@ int main(int argc, char *argv[]){
     // Create parameter structures
     Params::SysQuants sq;
     Params::DimensionlessQuants dq;
-    double Kb, Temp, pac_frac, r_healthy, r_cancer, surf_E, prop;
+    double Kb, Temp, pac_frac, r_healthy, r_cancer, surf_E, prop, blk_mod;
     try {
         // Process scaling parameters
         sq.N = config.lookup("Cells_Per_Population");
@@ -95,8 +95,10 @@ int main(int argc, char *argv[]){
         sq.surf_E_HH = surf_E*(double)config.lookup("Surface_E_H-H");
         sq.surf_E_HC = surf_E*(double)config.lookup("Surface_E_H-C");
         sq.surf_E_CC = surf_E*(double)config.lookup("Surface_E_C-C");
-        sq.poisson_H = config.lookup("Poisson_Num_H");
-        sq.poisson_C = config.lookup("Poisson_Num_C");
+        blk_mod = config.lookup("Bulk_Mod_H");
+        sq.poisson_H = .5-sq.e_mod_H/(6.0*blk_mod);
+        blk_mod = config.lookup("Bulk_Mod_C");
+        sq.poisson_C = .5-sq.e_mod_C/(6.0*blk_mod);
 
         // Process remaining settings and create a dimensionless structure
         pac_frac = config.lookup("Packing_Fraction");

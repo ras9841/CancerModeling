@@ -19,11 +19,11 @@ namespace Params {
         double prop_C;      // cm/s
         double radius_H;    // cm
         double radius_C;    // cm
-        double e_mod_H;     // kg/s^2
-        double e_mod_C;     // kg/s^2
-        double surf_E_HH;   // kg/s^2
-        double surf_E_HC;   // kg/s^2
-        double surf_E_CC;   // kg/s^2
+        double e_mod_H;     // g/s^2
+        double e_mod_C;     // g/s^2
+        double surf_E_HH;   // g/s^2
+        double surf_E_HC;   // g/s^2
+        double surf_E_CC;   // g/s^2
         double poisson_H;   // 
         double poisson_C;   //
     };

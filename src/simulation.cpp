@@ -9,7 +9,6 @@
 // Imports
 #include "simulation.hpp"
 #include <time.h>
-#include <math.h>
 
 /// Constructor for a Simulation objection.
 ///
@@ -29,10 +28,9 @@ Simulation::Simulation(const char *name, Params::SysQuants sq,
                         Params::DimensionlessQuants dq)
 {
     // Define constants
-    const double pi = std::atan(1)*4;
     double R = dq.Rb;
     #ifdef DEBUG
-        R = .2*dq.Rb;
+        if (DEBUG == "brownian" || DEBUG == "spp") {R = .2*dq.Rb;}
     #endif
 
     // Initialize attributes
@@ -149,9 +147,35 @@ void Simulation::find_collisions() {
 /// the JKR model for adhesion and repulsion.
 void Simulation::calc_forces() {
     for (unsigned int i=0; i<this->cells.size(); i++) {
-        cells[i].Fx = 0;
-        cells[i].Fy = 0;
-        cells[i].Fz = 0;
+        Cell *c1 = &cells[i];
+        // Reset Forces
+        c1->Fx = 0;
+        c1->Fy = 0;
+        c1->Fz = 0;
+        // Initialize values for JKR force
+        double h, E_star, R_star, F, sigma, mag;
+        for (int j : c1->adjlst) {
+            Cell c2 = cells[j];
+            if (c1->is_type(H) && c2.is_type(H)) {
+                sigma = sq.surf_E_HH;
+            }
+            else if (c1->is_type(C) && c2.is_type(C)) {
+                sigma = sq.surf_E_CC;
+            }
+            else {
+                sigma = sq.surf_E_HC;
+            }
+            mag = c1->distance_to(c2);
+            h = c1->R + c2.R - mag;
+            R_star = (c1->R*c2.R)/(c1->R + c2.R);
+            E_star = (4.0/3.0)*(c1->E*c2.E)/
+                ((1-pow(c1->nu,2))*c2.E+(1-pow(c2.nu,2))*c1->E);
+            F = E_star*sqrt(R_star)*pow(h,1.5) - 
+                sqrt(6*pi*sigma*E_star*pow(R_star,1.5)*pow(h,1.5));
+            c1->Fx += F*(c2.x-c1->x)/mag;
+            c1->Fy += F*(c2.y-c1->y)/mag;
+            c1->Fz += F*(c2.z-c1->z)/mag;
+        }
     }
 }
 
@@ -181,14 +205,14 @@ void Simulation::update_locs() {
         cells[i].dZdt = (sq.u_length/sq.u_energy)*cells[i].Fz;
         
         // Apply self propulsion
-        cells[i].dXdt = (sq.u_length/sq.D)*(cells[i].self_prop*cos(cells[i].theta)*sin(cells[i].phi))/sqrt(3);
-        cells[i].dYdt = (sq.u_length/sq.D)*(cells[i].self_prop*sin(cells[i].theta)*sin(cells[i].phi))/sqrt(3);
-        cells[i].dZdt = (sq.u_length/sq.D)*(cells[i].self_prop*cos(cells[i].phi))/sqrt(3);
+        cells[i].dXdt += (sq.u_length/sq.D)*(cells[i].self_prop*cos(cells[i].theta)*sin(cells[i].phi))/sqrt(3);
+        cells[i].dYdt += (sq.u_length/sq.D)*(cells[i].self_prop*sin(cells[i].theta)*sin(cells[i].phi))/sqrt(3);
+        cells[i].dZdt += (sq.u_length/sq.D)*(cells[i].self_prop*cos(cells[i].phi))/sqrt(3);
         
         // Apply diffusion
-        cells[i].dXdt = (sq.u_length*sqrt(2.0/(sq.D*dq.dt*sq.u_time)))*norm_dist(rho_gen);
-        cells[i].dYdt = (sq.u_length*sqrt(2.0/(sq.D*dq.dt*sq.u_time)))*norm_dist(rho_gen);
-        cells[i].dZdt = (sq.u_length*sqrt(2.0/(sq.D*dq.dt*sq.u_time)))*norm_dist(rho_gen);
+        cells[i].dXdt += (sq.u_length*sqrt(2.0/(sq.D*dq.dt*sq.u_time)))*norm_dist(rho_gen);
+        cells[i].dYdt += (sq.u_length*sqrt(2.0/(sq.D*dq.dt*sq.u_time)))*norm_dist(rho_gen);
+        cells[i].dZdt += (sq.u_length*sqrt(2.0/(sq.D*dq.dt*sq.u_time)))*norm_dist(rho_gen);
         #endif
         
         // Update positions and orientations (forward euler)
@@ -197,7 +221,7 @@ void Simulation::update_locs() {
         znew = cells[i].z + dq.dt*cells[i].dZdt;
 
         // Validity check: stay in sphere
-        if (pow(xnew,2)+pow(ynew,2)+pow(znew,2) < pow(dq.Rb,2))
+        if ( pow(xnew,2)+pow(ynew,2)+pow(znew,2) < pow(dq.Rb,2))
         {
             cells[i].x = cells[i].x + dq.dt*cells[i].dXdt;
             cells[i].y = cells[i].y + dq.dt*cells[i].dYdt;
