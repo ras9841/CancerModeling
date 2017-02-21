@@ -1,9 +1,10 @@
 #!/bin/bash
-
-for i in {1..30} 
+TAG=$1
+NUM=$2
+for ((i=1; i<=$NUM; i++)) 
 do
-    echo "Running TestB$i ..."
-    time ./run example1.cfg "testB$i"
+    echo "Running $TAG$i ..."
+    time ./run example1.cfg "$TAG$i"
     echo "Completed." 
     echo ""
 done

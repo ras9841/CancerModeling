@@ -16,6 +16,12 @@ enum CellType { H, C };
 class Cell {
     CellType type;
 public:
+    // Physcal attributes (these have units)
+    double R;               //  radius
+    double E;               //  elastic modulus
+    double nu;               //  poisson number
+    double self_prop;              //  surface energy 
+    // Other attributes
     int id;
     double x;
     double y;
@@ -31,9 +37,11 @@ public:
     std::vector<int> adjlst;    // List of adjacent cells (collided)
     // methods
     Cell(int id, CellType type, double x, double y, 
-            double z, double theta, double phi);
+            double z, double theta, double phi,
+	    double radius, double e_mod, double poisson,
+	    double self_prop);
     const char *get_type();
-    int hits(Cell c, double diam);
+    int hits(Cell c);
     int is_type(CellType t); 
 };
 #endif

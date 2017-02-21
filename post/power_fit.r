@@ -5,7 +5,7 @@
 #   fits a power curve to the data.
 
 # Read in data
-data_location <- "~/Documents/CancerModeling/outputs/testA.csv"
+data_location <- "~/Documents/CancerModeling/outputs/testS5.csv"
 sim_data <- read.csv(data_location, comment.char="#", sep="\t", header=FALSE)
 time <- unique(sim_data$V1)
 

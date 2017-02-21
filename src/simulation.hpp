@@ -15,22 +15,28 @@
 #include <stdio.h>
 
 class Simulation {
+    // attributes
     std::vector<Cell> cells;
     unsigned int base_seed;
     std::normal_distribution<double> norm_dist;
     std::default_random_engine theta_gen;
     std::default_random_engine phi_gen;
     std::default_random_engine rho_gen;
+    Params::SysQuants sq; 
+    Params::DimensionlessQuants dq;
+
+    // methods
     void write_cell_loc(FILE *, double);
-    void find_collisions(Params::ScalingQuants sq);
-    void calc_forces(Params::DimensionlessQuants qd);
-    void update_locs(Params::ScalingQuants, Params:: DimensionlessQuants);
+    void find_collisions();
+    void calc_forces();
+    void update_locs();
 public:
+    // attributes
     const char *filename;
     // methods
-    Simulation(const char *filename, Params::ScalingQuants sq, 
+    Simulation(const char *filename, Params::SysQuants sq, 
             Params::DimensionlessQuants dq);
-    void run(Params::ScalingQuants sq, Params::DimensionlessQuants dq);
+    void run();
 };
 
 #endif

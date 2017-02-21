@@ -20,8 +20,14 @@
 ///     z0      --  initial z location of the cell
 ///     theta0  --` initial theta orientation [0,2*pi]
 ///     phi0    --  initial phi orientation [0,pi]
+///     radius
+///     e_mod
+///     poisson
+///     self_prop
 Cell::Cell(int id, CellType type, double x0, double y0, 
-        double z0, double theta0, double phi0){
+        double z0, double theta0, double phi0,
+	double radius, double e_mod, double poisson,
+        double self_prop){
     this->id = id;
     this->type = type;
     this->x = x0;
@@ -29,6 +35,10 @@ Cell::Cell(int id, CellType type, double x0, double y0,
     this->z = z0;
     this->theta = theta0;
     this->phi = phi0;
+    this->R = radius;
+    this->E  = e_mod;
+    this->nu = poisson;
+    this->self_prop = self_prop;
 }
 
 /// Returns a string representation of the cell's type.
@@ -57,8 +67,8 @@ int Cell::is_type(CellType tp) {
 ///
 /// Keyword Arguments
 ///     c       --  cell potentially colliding with this cell.
-///     scale   --  length scale for a collision  
-int Cell::hits(Cell c, double scale) {
+int Cell::hits(Cell c) {
+    double scale = c.R > this->R ? c.R : this->R;
     if (sqrt(pow(c.x-this->x,2)+pow(c.y-this->y,2)+pow(c.z-this->z,2)) > scale){
         return 0;
     } 

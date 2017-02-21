@@ -23,9 +23,9 @@
 ///
 /// Keyword Arguments:
 ///     name    --  name used for output files.
-///     sq      --  scaling quantities used for length, time, and energy scales.
+///     sq      --  system quantities used for length, time, and energy scales.
 ///     dq      --  dimensionless quantities used in the simulation
-Simulation::Simulation(const char *name, Params::ScalingQuants sq,
+Simulation::Simulation(const char *name, Params::SysQuants sq,
                         Params::DimensionlessQuants dq)
 {
     // Define constants
@@ -37,6 +37,8 @@ Simulation::Simulation(const char *name, Params::ScalingQuants sq,
 
     // Initialize attributes
     this->filename = name;
+    this->sq = sq;
+    this->dq = dq;
 
     // Setup Simulation
     unsigned int base = time(NULL);
@@ -87,19 +89,23 @@ Simulation::Simulation(const char *name, Params::ScalingQuants sq,
     this->rho_gen.seed(base+8);
 
     double x, y, z;
-    for (int i = 0; i<sq.N; i++) {
+    for (int i = 0; i<sq.N; i++) { // Healthy
         x = rho_vals[i] * cos(theta_vals[i]) * sin(phi_vals[i]);
         y = rho_vals[i] * sin(theta_vals[i]) * sin(phi_vals[i]);
         z = rho_vals[i] * cos(phi_vals[i]);
         this->cells.push_back(Cell(i, H, x, y, z, 
-                    norm_dist(theta_gen), norm_dist(phi_gen)));
+                    norm_dist(theta_gen), norm_dist(phi_gen), sq.radius_H,
+                    sq.e_mod_H, sq.poisson_H, sq.prop_H 
+                    ));
     }
-    for (int i = sq.N; i<2*sq.N; i++) {
+    for (int i = sq.N; i<2*sq.N; i++) { // Cancer
         x = rho_vals[i] * cos(theta_vals[i]) * sin(phi_vals[i]);
         y = rho_vals[i] * sin(theta_vals[i]) * sin(phi_vals[i]);
         z = rho_vals[i] * cos(phi_vals[i]);
-        this->cells.push_back(Cell(i+1, C, x, y, z,
-                    norm_dist(theta_gen), norm_dist(phi_gen)));
+        this->cells.push_back(Cell(i, C, x, y, z,
+                    norm_dist(theta_gen), norm_dist(phi_gen), sq.radius_C,
+                    sq.e_mod_C, sq.poisson_C, sq.prop_C 
+                    ));
     }
 }
 
@@ -124,15 +130,12 @@ void Simulation::write_cell_loc(FILE *file, double time) {
 /// Current implementation in a brute force O(N^2) direct comparison. Collided 
 /// cells are added to the cells' adjacency list for future use in the force
 /// calculations.
-///
-/// Keyword Arguments:
-///     sq  --  scaling quantities (used for unit length)
-void Simulation::find_collisions(Params::ScalingQuants sq) {
+void Simulation::find_collisions() {
     for (unsigned int i=0; i<this->cells.size(); i++) {
         cells[i].adjlst.clear();
         for (unsigned int j=0; j<this->cells.size(); j++) {
             if (i != j) {
-                if (cells[i].hits(cells[j], sq.u_length)) {
+                if (cells[i].hits(cells[j])) {
                     cells[i].adjlst.push_back(cells[j].id);
                 }
             }
@@ -144,10 +147,7 @@ void Simulation::find_collisions(Params::ScalingQuants sq) {
 ///
 /// Currently, these interactions are set to zero. Future versions will include
 /// the JKR model for adhesion and repulsion.
-///
-/// Keywork Arguments:
-///     dq  --  demensionless quantities used in force calculation.
-void Simulation::calc_forces(Params::DimensionlessQuants dq) {
+void Simulation::calc_forces() {
     for (unsigned int i=0; i<this->cells.size(); i++) {
         cells[i].Fx = 0;
         cells[i].Fy = 0;
@@ -160,11 +160,7 @@ void Simulation::calc_forces(Params::DimensionlessQuants dq) {
 /// Currently, forces contributing to the particles velocity include Brownian 
 /// motion, self-propulsion, cell-cell adhession, and cell-cell repulsion. The
 /// numerical integration is done with Forward Euler O(dt).
-///
-/// Keyword Arguments:
-///     sq  --  scaling quantity used to nondimensionalize the force equations
-///     dq  --  demensionless quantities used in force calculation.
-void Simulation::update_locs(Params::ScalingQuants sq, Params::DimensionlessQuants dq) {
+void Simulation::update_locs() {
     double xnew, ynew, znew;
     for (unsigned int i=0; i<this->cells.size(); i++) {
         #ifdef DEBUG
@@ -174,32 +170,21 @@ void Simulation::update_locs(Params::ScalingQuants sq, Params::DimensionlessQuan
             cells[i].dZdt = (sq.u_length*sqrt(2.0/(sq.D*dq.dt*sq.u_time)))*norm_dist(rho_gen);
         }
         else if (DEBUG == "spp") {
-            if (cells[i].is_type(H)) {
-                cells[i].dXdt = (sq.u_length/sq.D)*(dq.prop_H*cos(cells[i].theta)*sin(cells[i].phi))/sqrt(3);
-                cells[i].dYdt = (sq.u_length/sq.D)*(dq.prop_H*sin(cells[i].theta)*sin(cells[i].phi))/sqrt(3);
-                cells[i].dZdt = (sq.u_length/sq.D)*(dq.prop_H*cos(cells[i].phi))/sqrt(3);
-            }
-            else {
-                cells[i].dXdt = (sq.u_length/sq.D)*(dq.prop_C*cos(cells[i].theta)*sin(cells[i].phi))/sqrt(3);
-                cells[i].dYdt = (sq.u_length/sq.D)*(dq.prop_C*sin(cells[i].theta)*sin(cells[i].phi))/sqrt(3);
-                cells[i].dZdt = (sq.u_length/sq.D)*(dq.prop_C*cos(cells[i].phi))/sqrt(3);
-            }
+            cells[i].dXdt = (sq.u_length/sq.D)*(cells[i].self_prop*cos(cells[i].theta)*sin(cells[i].phi))/sqrt(3);
+            cells[i].dYdt = (sq.u_length/sq.D)*(cells[i].self_prop*sin(cells[i].theta)*sin(cells[i].phi))/sqrt(3);
+            cells[i].dZdt = (sq.u_length/sq.D)*(cells[i].self_prop*cos(cells[i].phi))/sqrt(3);
         }
         #else
+        // 
         cells[i].dXdt = (sq.u_length/sq.u_energy)*cells[i].Fx;
         cells[i].dYdt = (sq.u_length/sq.u_energy)*cells[i].Fy;
         cells[i].dZdt = (sq.u_length/sq.u_energy)*cells[i].Fz;
+        
         // Apply self propulsion
-        if (cells[i].is_type(H)) {
-            cells[i].dXdt = (sq.u_length/sq.D)*(dq.prop_H*cos(cells[i].theta)*sin(cells[i].phi))/sqrt(3);
-            cells[i].dYdt = (sq.u_length/sq.D)*(dq.prop_H*sin(cells[i].theta)*sin(cells[i].phi))/sqrt(3);
-            cells[i].dZdt = (sq.u_length/sq.D)*(dq.prop_H*cos(cells[i].phi))/sqrt(3);
-        }
-        else {
-            cells[i].dXdt = (sq.u_length/sq.D)*(dq.prop_C*cos(cells[i].theta)*sin(cells[i].phi))/sqrt(3);
-            cells[i].dYdt = (sq.u_length/sq.D)*(dq.prop_C*sin(cells[i].theta)*sin(cells[i].phi))/sqrt(3);
-            cells[i].dZdt = (sq.u_length/sq.D)*(dq.prop_C*cos(cells[i].phi))/sqrt(3);
-        }
+        cells[i].dXdt = (sq.u_length/sq.D)*(cells[i].self_prop*cos(cells[i].theta)*sin(cells[i].phi))/sqrt(3);
+        cells[i].dYdt = (sq.u_length/sq.D)*(cells[i].self_prop*sin(cells[i].theta)*sin(cells[i].phi))/sqrt(3);
+        cells[i].dZdt = (sq.u_length/sq.D)*(cells[i].self_prop*cos(cells[i].phi))/sqrt(3);
+        
         // Apply diffusion
         cells[i].dXdt = (sq.u_length*sqrt(2.0/(sq.D*dq.dt*sq.u_time)))*norm_dist(rho_gen);
         cells[i].dYdt = (sq.u_length*sqrt(2.0/(sq.D*dq.dt*sq.u_time)))*norm_dist(rho_gen);
@@ -232,11 +217,7 @@ void Simulation::update_locs(Params::ScalingQuants sq, Params::DimensionlessQuan
 /// current cell locations, (2) find cells that are colliding, (3) calculate
 /// the adhesive and repulsive forces acting on each cell, and (4) update
 /// the particle locations.
-///
-/// Keyword Arguments:
-///     sq  --  scaling quantity used to nondimensionalize the force equations
-///     dq  --  demensionless quantities used in force calculation.
-void Simulation::run(Params::ScalingQuants sq, Params::DimensionlessQuants dq) {
+void Simulation::run() {
     // Get current time
     time_t rawtime;
     struct tm * timeinfo;
@@ -255,9 +236,9 @@ void Simulation::run(Params::ScalingQuants sq, Params::DimensionlessQuants dq) {
     double t = 0;
     while (t < dq.tf) {
         write_cell_loc(file, t);        
-        find_collisions(sq);
-        calc_forces(dq);
-        update_locs(sq, dq);
+        find_collisions();
+        calc_forces();
+        update_locs();
         t += dq.dt;
     }
     write_cell_loc(file, t);        

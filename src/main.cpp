@@ -68,31 +68,41 @@ int main(int argc, char *argv[]){
     }
 
     // Create parameter structures
-    Params::ScalingQuants sq;
+    Params::SysQuants sq;
     Params::DimensionlessQuants dq;
-    double Kb, Temp, pac_frac;
+    double Kb, Temp, pac_frac, r_healthy, r_cancer, surf_E, prop;
     try {
         // Process scaling parameters
         sq.N = config.lookup("Cells_Per_Population");
         sq.D = config.lookup("Diffusion_Const");
-        sq.u_length = config.lookup("Cell_Diameter");
         Kb = config.lookup("Boltzmann_Constant");
         Temp = config.lookup("Temperature");
         sq.u_energy = Kb*Temp; 
-        sq.u_time = pow(sq.u_length, 2)/sq.D;
+        r_healthy = config.lookup("Radius_H");
+        r_cancer = config.lookup("Radius_C");
+        sq.u_length = r_healthy+r_cancer; // Average diameter
+        sq.u_time = pow(sq.u_length, 2.0)/sq.D;
+        // These parameters should have units since the force calculation
+        // addresses the scaling.
+        sq.radius_H = r_healthy;
+        sq.radius_C = r_cancer;
+        prop = config.lookup("Propulsion");
+        sq.prop_H = prop*(double)config.lookup("Propulsion_H");
+        sq.prop_C = prop*(double)config.lookup("Propulsion_C");
+        sq.e_mod_H = config.lookup("Elastic_Mod_H");
+        sq.e_mod_C = config.lookup("Elastic_Mod_C");
+        surf_E = config.lookup("Surface_E");
+        sq.surf_E_HH = surf_E*(double)config.lookup("Surface_E_H-H");
+        sq.surf_E_HC = surf_E*(double)config.lookup("Surface_E_H-C");
+        sq.surf_E_CC = surf_E*(double)config.lookup("Surface_E_C-C");
+        sq.poisson_H = config.lookup("Poisson_Num_H");
+        sq.poisson_C = config.lookup("Poisson_Num_C");
 
         // Process remaining settings and create a dimensionless structure
         pac_frac = config.lookup("Packing_Fraction");
-        dq.Rb = cbrt((4*sq.N)/pac_frac);
+        dq.Rb = cbrt((4*sq.N)/pac_frac); // make unitless by dividing by diam
         dq.dt = config.lookup("Time_Step"); // already unitless
         dq.tf = config.lookup("Simulation_Duration"); // already unitless
-        dq.prop_H = config.lookup("Propulsion_H");
-        dq.prop_C = config.lookup("Propulsion_C");
-        dq.rep_H = config.lookup("Repulsion_H");
-        dq.rep_C = config.lookup("Repulsion_C");
-        dq.adh_HH = config.lookup("Adhesion_H-H");
-        dq.adh_HC = config.lookup("Adhesion_H-C");
-        dq.adh_CC = config.lookup("Adhesion_C-C");
     }
     catch (const libconfig::SettingNotFoundException &snf)
     {
@@ -101,27 +111,35 @@ int main(int argc, char *argv[]){
     }
 
     #ifdef DEBUG
-    // Print out scaling params
-    printf("### Scaling Parameters\n");
-    printf("Cells/Population:\t %d\n", sq.N);
-    printf("Diffusion Const:\t %g\n", sq.D);
-    printf("Cell Diameter:\t\t %g\n", sq.u_length);
-    printf("Unit Energy:\t\t %g\n", sq.u_energy);
-    printf("Unit Time:\t\t %g\n", sq.u_time);
+    // Print out system params
+    printf("### System Parameters\n");
+    printf("Cells/Population:\t\t %d\n", sq.N);
+    printf("Diffusion Const:\t\t %g\n", sq.D);
+    printf("Unit Length:\t\t\t %g\n", sq.u_length);
+    printf("Unit Energy:\t\t\t %g\n", sq.u_energy);
+    printf("Unit Time:\t\t\t %g\n", sq.u_time);
+    printf("Healthy Cell Speed:\t\t %g\n", sq.prop_H);
+    printf("Cancer Cell Speed:\t\t %g\n", sq.prop_C);
+    printf("Healthy Cell Radius:\t\t %g\n", sq.radius_H); 
+    printf("Cancer Cell Radius:\t\t %g\n", sq.radius_C); 
+    printf("Healthy Cell Elastic Mod:\t %g\n", sq.e_mod_H); 
+    printf("Cancer Cell Elastic Mod:\t %g\n", sq.e_mod_C); 
+    printf("Healthy Cell Poisson Num:\t %g\n", sq.poisson_H); 
+    printf("Cancer Cell Poisson Num:\t %g\n", sq.poisson_C);
+    printf("Surface Energy (HH):\t\t %g\n", sq.surf_E_HH); 
+    printf("Surface Energy (HC):\t\t %g\n", sq.surf_E_HC); 
+    printf("Surface Energy (CC):\t\t %g\n", sq.surf_E_CC); 
 
     // Print out dimensionless params
     printf("### Dimensionless Parameters\n");
-    printf("Packing Fraction:\t %g\n", pac_frac);
-    printf("Bounding Radius:\t %g\n", dq.Rb);
-    printf("Time Step:\t\t %g\n", dq.dt);    
-    printf("Simulation Duration:\t %g\n", dq.tf);    
-    printf("Propulsions [H,C]:\t [%g,%g]\n", dq.prop_H, dq.prop_C);    
-    printf("Repulsions [H,C]:\t [%g,%g]\n", dq.rep_H, dq.rep_C);    
-    printf("Adhesions [HH,HC,CC]:\t [%g,%g,%g]\n",dq.adh_HH,dq.adh_HC,dq.adh_CC);    
+    printf("Packing Fraction:\t\t %g\n", pac_frac);
+    printf("Bounding Radius:\t\t %g\n", dq.Rb);
+    printf("Time Step:\t\t\t %g\n", dq.dt);    
+    printf("Simulation Duration:\t\t %g\n", dq.tf);    
     #endif 
 
     Simulation sim (output, sq, dq);
-    sim.run(sq, dq);
+    sim.run();
 
     delete [] input;
     delete [] output;

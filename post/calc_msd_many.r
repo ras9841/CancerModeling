@@ -5,8 +5,8 @@
 #   averaging multiple trials. The MSD slope is displayed for both types with uncertainty.
 
 # Read in data
-base <- "~/Documents/CancerModeling/outputs/test"
-data_location <- "~/Documents/CancerModeling/outputs/test1.csv"
+base <- "~/Documents/CancerModeling/outputs/testB"
+data_location <- "~/Documents/CancerModeling/outputs/testB1.csv"
 sim_data <- read.csv(data_location, comment.char="#", sep="\t", header=FALSE)
 time <- unique(sim_data$V1)
 
