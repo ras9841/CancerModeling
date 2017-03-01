@@ -198,8 +198,24 @@ void Simulation::update_locs() {
             cells[i].dYdt = (sq.u_length/sq.D)*(cells[i].self_prop*sin(cells[i].theta)*sin(cells[i].phi))/sqrt(3);
             cells[i].dZdt = (sq.u_length/sq.D)*(cells[i].self_prop*cos(cells[i].phi))/sqrt(3);
         }
+        else {
+            // Apply JKR force 
+            cells[i].dXdt = (sq.u_length/sq.u_energy)*cells[i].Fx;
+            cells[i].dYdt = (sq.u_length/sq.u_energy)*cells[i].Fy;
+            cells[i].dZdt = (sq.u_length/sq.u_energy)*cells[i].Fz;
+        
+            // Apply self propulsion
+            cells[i].dXdt += (sq.u_length/sq.D)*(cells[i].self_prop*cos(cells[i].theta)*sin(cells[i].phi))/sqrt(3);
+            cells[i].dYdt += (sq.u_length/sq.D)*(cells[i].self_prop*sin(cells[i].theta)*sin(cells[i].phi))/sqrt(3);
+            cells[i].dZdt += (sq.u_length/sq.D)*(cells[i].self_prop*cos(cells[i].phi))/sqrt(3);
+        
+            // Apply diffusion
+            cells[i].dXdt += (sq.u_length*sqrt(2.0/(sq.D*dq.dt*sq.u_time)))*norm_dist(rho_gen);
+            cells[i].dYdt += (sq.u_length*sqrt(2.0/(sq.D*dq.dt*sq.u_time)))*norm_dist(rho_gen);
+            cells[i].dZdt += (sq.u_length*sqrt(2.0/(sq.D*dq.dt*sq.u_time)))*norm_dist(rho_gen);
+        }
         #else
-        // 
+        // Apply JKR force 
         cells[i].dXdt = (sq.u_length/sq.u_energy)*cells[i].Fx;
         cells[i].dYdt = (sq.u_length/sq.u_energy)*cells[i].Fy;
         cells[i].dZdt = (sq.u_length/sq.u_energy)*cells[i].Fz;
@@ -257,18 +273,29 @@ void Simulation::run() {
     fprintf(file, "# Bounding Radius: %f\t Time Scale: %f\n", dq.Rb, sq.u_time);
     fprintf(file, "# Format: time(tau)\t cellID\t cellType\t x\t y\t z\n");
 
+    int total = (int)(dq.tf/dq.dt);
+    int data_freq = (int)(total/sq.num_points);
+    #ifdef DEBUG
+    printf("\n### Starting simulation.\n");
+    printf("Taking data every %d steps for %d steps.\n", data_freq, total);
+    #endif
+    int count = data_freq;
     double t = 0;
     while (t < dq.tf) {
-        write_cell_loc(file, t);        
+        if (count == data_freq) { 
+            write_cell_loc(file, t); 
+            count = 0;
+        } 
         find_collisions();
         calc_forces();
         update_locs();
         t += dq.dt;
+        count++;
     }
     write_cell_loc(file, t);        
+    #ifdef DEBUG
+    printf("\n### Simulation Completed.\n");
+    #endif
 
     fclose(file);
 }
-
-
-

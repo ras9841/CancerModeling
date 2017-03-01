@@ -7,10 +7,11 @@
 library(rgl)
 N <- 256
 Rb <-0.0142276  # taken from debug output
-data_location <- "~/Documents/CancerModeling/outputs/testA.csv"
-sim_data <- read.csv(data_location, comment.char="#", sep="\t", header=FALSE)
+base <- "~/Documents/CancerModeling/outputs/long_test-"
+data_location <- paste(base, 1, ".csv", sep="")
+sim_data <- fread(data_location, sep="\t", header=FALSE, skip=4)
 
-start = 1
+start = dim(sim_data)[1] - N
 while (start < N) {
     data <- sim_data[start:(start+N-1),]
     healthy <- subset(data, V3 == "H")

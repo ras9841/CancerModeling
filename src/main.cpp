@@ -73,6 +73,7 @@ int main(int argc, char *argv[]){
     double Kb, Temp, pac_frac, r_healthy, r_cancer, surf_E, prop, blk_mod;
     try {
         // Process scaling parameters
+        sq.num_points = config.lookup("Number_Of_Data_Points");
         sq.N = config.lookup("Cells_Per_Population");
         sq.D = config.lookup("Diffusion_Const");
         Kb = config.lookup("Boltzmann_Constant");
@@ -116,6 +117,7 @@ int main(int argc, char *argv[]){
     // Print out system params
     printf("### System Parameters\n");
     printf("Cells/Population:\t\t %d\n", sq.N);
+    printf("Number of Data Points:\t\t %d\n", sq.num_points);
     printf("Diffusion Const:\t\t %g\n", sq.D);
     printf("Unit Length:\t\t\t %g\n", sq.u_length);
     printf("Unit Energy:\t\t\t %g\n", sq.u_energy);

@@ -15,6 +15,7 @@ namespace Params {
         double u_time;      // unit time:   u_length^2/D
         double D;           // diffusion constant
         int N;              // number of cells per population
+        int num_points;     // number of data points taken
         double prop_H;      // cm/s
         double prop_C;      // cm/s
         double radius_H;    // cm

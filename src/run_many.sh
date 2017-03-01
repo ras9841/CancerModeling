@@ -1,10 +1,11 @@
 #!/bin/bash
-TAG=$1
-NUM=$2
+CONFIG=$1
+TAG=$2
+NUM=$3
 for ((i=1; i<=$NUM; i++)) 
 do
-    echo "Running $TAG$i ..."
-    time ./run example1.cfg "$TAG$i"
+    echo "Running $TAG $i ..."
+    time ./run "$CONFIG" "$TAG-$i"
     echo "Completed." 
     echo ""
 done

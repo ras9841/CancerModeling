@@ -38,9 +38,11 @@ get_cancer_msdfc <- function(time, sim_data){
 
 main <- function() {
   # Read in data
-  data_location <- "~/Documents/CancerModeling/outputs/testC-1.csv"
+  base <- "~/Documents/CancerModeling/outputs/long-test3-"
+  data_location <- paste(base, 1, ".csv", sep="")
   sim_data <- fread(data_location, sep="\t", header=FALSE, skip=4)
-
+  num_sim <- 2
+  
   # Setup time and MSD vectors
   time <- unique(sim_data$V1)
 
@@ -48,12 +50,19 @@ main <- function() {
   no_cores <- 4;
   cl<-makeCluster(no_cores)
   registerDoParallel(cl)
-  
-  # calculate MSDFC
-  healthy_dfc <- get_healthy_msdfc(time, sim_data)
-  cancer_dfc <- get_cancer_msdfc(time, sim_data)
+  healthy_dfc = numeric(length(time))
+  cancer_dfc = numeric(length(time))
+  for (i in 1:num_sim) {
+    data_location <- paste(base, i, ".csv", sep="")
+    sim_data <- fread(data_location, sep="\t", header=FALSE, skip=4)
+    # calculate MSDFC
+    healthy_dfc <- healthy_dfc + get_healthy_msdfc(time, sim_data)
+    cancer_dfc <- cancer_dfc + get_cancer_msdfc(time, sim_data)
+  }
   stopCluster(cl)
-
+  healthy_dfc <- healthy_dfc/num_sim
+  cancer_dfc <- cancer_dfc/num_sim
+  
   # Plot Results
   df <- data.frame(time,healthy_dfc,cancer_dfc)
   g <-ggplot(df, aes(time)) +                  
