@@ -35,18 +35,34 @@ int main(int argc, char *argv[]){
     if (argc != 3) { print_usage(); }
 	
     std::stringstream in_input;
-    std::stringstream in_output;
+    std::stringstream in_dfc_out;
+    std::stringstream in_msd_out;
+    std::stringstream in_loc_out;
+
     in_input << "../inputs/" << argv[1];
-    in_output << "../outputs/" << argv[2] << ".csv";
+    in_dfc_out << "../outputs/" << argv[2] << "_dfc.csv";
+    in_msd_out << "../outputs/" << argv[2] << "_msd.csv";
+    in_loc_out << "../outputs/" << argv[2] << "_loc.csv";
+
     std::string input_str = in_input.str();
-    std::string output_str = in_output.str();
+    std::string msd_str = in_msd_out.str();
+    std::string dfc_str = in_dfc_out.str();
+    std::string loc_str = in_loc_out.str();
+    
     char *input = new char[input_str.length() + 1];
-    char *output = new char[output_str.length() + 1];
+    char *out_msd = new char[msd_str.length() + 1];
+    char *out_dfc = new char[dfc_str.length() + 1];
+    char *out_loc = new char[loc_str.length() + 1];
+
     std::strcpy(input, input_str.c_str());
-    std::strcpy(output, output_str.c_str());
+    std::strcpy(out_msd, msd_str.c_str());
+    std::strcpy(out_dfc, dfc_str.c_str());
+    std::strcpy(out_loc, loc_str.c_str());
 
     printf("### Using %s to determine simulation parameters\n", input);
-    printf("### Writing cell locations to %s \n", output);
+    printf("### Writing cell locations to %s \n", out_loc);
+    printf("### Writing cell MSD values to %s \n", out_msd);
+    printf("### Writing cell DFC values to %s \n", out_dfc);
     #ifdef DEBUG
     printf("### DEBUG mode: %s\n", DEBUG);
     #endif 
@@ -142,11 +158,13 @@ int main(int argc, char *argv[]){
     printf("Simulation Duration:\t\t %g\n", dq.tf);    
     #endif 
 
-    Simulation sim (output, sq, dq);
+    Simulation sim (out_loc, out_msd, out_dfc, sq, dq);
     sim.run();
 
     delete [] input;
-    delete [] output;
+    delete [] out_msd;
+    delete [] out_dfc;
+    delete [] out_loc;
     return EXIT_SUCCESS; 
 }
   

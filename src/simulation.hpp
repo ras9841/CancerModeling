@@ -29,14 +29,19 @@ class Simulation {
 
     // methods
     void write_cell_loc(FILE *, double);
+    void write_cell_msd(FILE *, double);
+    void write_cell_dfc(FILE *, double);
     void find_collisions();
     void calc_forces();
     void update_locs();
 public:
     // attributes
-    const char *filename;
+    const char *loc_name;
+    const char *msd_name;
+    const char *dfc_name;
     // methods
-    Simulation(const char *filename, Params::SysQuants sq, 
+    Simulation(const char *name_loc, const char *name_msd, 
+            const char *name_dfc, Params::SysQuants sq, 
             Params::DimensionlessQuants dq);
     void run();
 };

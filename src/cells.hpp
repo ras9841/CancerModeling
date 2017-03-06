@@ -23,6 +23,9 @@ public:
     double self_prop;              //  surface energy 
     // Other attributes
     int id;
+    double x0;
+    double y0;
+    double z0;
     double x;
     double y;
     double z;
@@ -45,5 +48,6 @@ public:
     int is_type(CellType t); 
     double distance_to(Cell c);
     double get_rho();
+    double calc_msd();
 };
 #endif

@@ -21,11 +21,14 @@
 /// which is generated based on the computing system's time.
 ///
 /// Keyword Arguments:
-///     name    --  name used for output files.
+///     name_loc    --  name used for cell location output file.
+///     name_msd    --  name used for cell MSD output file.
+///     name_dfc    --  name used for cell DFC output file.
 ///     sq      --  system quantities used for length, time, and energy scales.
 ///     dq      --  dimensionless quantities used in the simulation
-Simulation::Simulation(const char *name, Params::SysQuants sq,
-                        Params::DimensionlessQuants dq)
+Simulation::Simulation(const char *name_loc, const char *name_msd, 
+                    const char *name_dfc, Params::SysQuants sq,
+                    Params::DimensionlessQuants dq)
 {
     // Define constants
     double R = dq.Rb;
@@ -34,7 +37,9 @@ Simulation::Simulation(const char *name, Params::SysQuants sq,
     #endif
 
     // Initialize attributes
-    this->filename = name;
+    this->loc_name = name_loc;
+    this->msd_name = name_msd;
+    this->dfc_name = name_dfc;
     this->sq = sq;
     this->dq = dq;
 
@@ -109,7 +114,7 @@ Simulation::Simulation(const char *name, Params::SysQuants sq,
 
 /// Updates the results file with the current state of the system.
 ///
-/// The output quantities (time,x,y,z) are with respect to the scaling
+/// The output quantities (time,id,type,x,y,z) with respect to the scaling
 /// quantities ulength and utime.
 ///
 /// Keyword Arguments:
@@ -121,6 +126,59 @@ void Simulation::write_cell_loc(FILE *file, double time) {
         fprintf(file, "%s\t%.6f\t", cells[i].get_type(), cells[i].x);
         fprintf(file, "%f\t%f\n", cells[i].y, cells[i].z);
     }
+}
+/// Updates the results file with the current state of the system.
+///
+/// The output quantities (time, msd_H, msd_C) with respect to the scaling
+/// quantities ulength and utime.
+///
+/// Keyword Arguments:
+///     file    --  file pointer to the output data location.
+///     time    --  current time in units of tau
+void Simulation::write_cell_msd(FILE *file, double time) { 
+    double count_H = 0.0, count_C = 0.0;
+    double sum_msd_H = 0.0, sum_msd_C = 0.0;
+    double msd = 0.0;
+    for (unsigned int i=0; i<this->cells.size(); i++) {
+        msd = cells[i].calc_msd();
+        if (cells[i].is_type(H))
+        {
+            sum_msd_H += msd;
+            count_H++;
+        }
+        else {
+            sum_msd_C += msd;
+            count_C++;
+        }
+    }
+    fprintf(file, "%.6f\t%.6f\t%.6f\n", time, sum_msd_H/count_H, sum_msd_C/count_C);
+}
+
+/// Updates the results file with the current state of the system.
+///
+/// The output quantities (time, dfc_H, dfc_C) with respect to the scaling
+/// quantities ulength and utime.
+///
+/// Keyword Arguments:
+///     file    --  file pointer to the output data location.
+///     time    --  current time in units of tau
+void Simulation::write_cell_dfc(FILE *file, double time) { 
+    double count_H = 0.0, count_C = 0.0;
+    double sum_dfc_H = 0.0, sum_dfc_C = 0.0;
+    double dfc = 0.0;
+    for (unsigned int i=0; i<this->cells.size(); i++) {
+        dfc = pow(cells[i].get_rho(),2.0); // square the distance from center
+        if (cells[i].is_type(H))
+        {
+            sum_dfc_H += dfc;
+            count_H++;
+        }
+        else {
+            sum_dfc_C += dfc;
+            count_C++;
+        }
+    }
+    fprintf(file, "%.6f\t%.6f\t%.6f\n", time, sum_dfc_H/count_H, sum_dfc_C/count_C);
 }
 
 /// Finds all cells in the current simulation state that are colliding.
@@ -267,11 +325,19 @@ void Simulation::run() {
     timeinfo = localtime (&rawtime);
     strftime (buffer,80,"%c",timeinfo);
     
-    FILE *file = fopen(this->filename, "w");
-    fprintf(file, "# Time started: %s\n", buffer); 
-    fprintf(file, "# Simulation using %d cells\n", 2*sq.N);
-    fprintf(file, "# Bounding Radius: %f\t Time Scale: %f\n", dq.Rb, sq.u_time);
-    fprintf(file, "# Format: time(tau)\t cellID\t cellType\t x\t y\t z\n");
+    FILE *loc_file = fopen(this->loc_name, "w");
+    FILE *msd_file = fopen(this->msd_name, "w");
+    FILE *dfc_file = fopen(this->dfc_name, "w");
+    FILE *files[3] = {loc_file, msd_file, dfc_file};
+
+    for (FILE *file : files) {
+        fprintf(file, "# Time started: %s\n", buffer); 
+        fprintf(file, "# Simulation using %d cells\n", 2*sq.N);
+        fprintf(file, "# Bounding Radius: %f\t Time Scale: %f\n", dq.Rb, sq.u_time);
+    }
+    fprintf(loc_file, "# Format: time(tau)\t cellID\t cellType\t x\t y\t z\n");
+    fprintf(msd_file, "# Format: time(tau)\t MSD_H\t MSD_C\n");
+    fprintf(dfc_file, "# Format: time(tau)\t DFC_H\t DFC_C\n");
 
     int total = (int)(dq.tf/dq.dt);
     int data_freq = (int)(total/sq.num_points);
@@ -283,7 +349,9 @@ void Simulation::run() {
     double t = 0;
     while (t < dq.tf) {
         if (count == data_freq) { 
-            write_cell_loc(file, t); 
+            write_cell_loc(loc_file, t); 
+            write_cell_msd(msd_file, t); 
+            write_cell_dfc(dfc_file, t); 
             count = 0;
         } 
         find_collisions();
@@ -292,10 +360,14 @@ void Simulation::run() {
         t += dq.dt;
         count++;
     }
-    write_cell_loc(file, t);        
+    write_cell_loc(loc_file, t); 
+    write_cell_msd(msd_file, t); 
+    write_cell_dfc(dfc_file, t); 
     #ifdef DEBUG
     printf("\n### Simulation Completed.\n");
     #endif
 
-    fclose(file);
+    fclose(loc_file);
+    fclose(msd_file);
+    fclose(dfc_file);
 }

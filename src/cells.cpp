@@ -30,6 +30,9 @@ Cell::Cell(int id, CellType type, double x0, double y0,
         double self_prop){
     this->id = id;
     this->type = type;
+    this->x0 = x0;
+    this->y0 = y0;
+    this->z0 = z0;
     this->x = x0;
     this->y = y0;
     this->z = z0;
@@ -71,6 +74,11 @@ int Cell::hits(Cell c) {
     double scale = c.R > this->R ? c.R : this->R;
     return distance_to(c) < scale ? 1 : 0;
 }
+
+double Cell::calc_msd() {
+    return pow(x-x0,2)+pow(y-y0,2)+pow(z-z0,2);
+}
+
 
 double Cell::distance_to(Cell c) {
     return sqrt(pow(x-c.x,2)+pow(y-c.y,2)+pow(z-c.z,2));
