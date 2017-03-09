@@ -8,10 +8,10 @@ library(ggplot2)
 
 
 # Read in data
-base <- "~/Documents/CancerModeling/outputs/mult_files-"
+base <- "~/Documents/CancerModeling/outputs/slower-"
 data_location <- paste(base, 1, "_dfc.csv", sep="")
 sim_data <- fread(data_location, sep="\t", header=FALSE, skip=4)
-num_sim <- 5
+num_sim <- 7
 
 time = sim_data$V1
 healthy_msd = numeric(length=length(time))
@@ -32,6 +32,6 @@ df <- data.frame(time,healthy_msd,cancer_msd)
 g <-ggplot(df, aes(time)) +                  
   geom_line(aes(y=healthy_msd), colour="blue") + 
   geom_line(aes(y=cancer_msd), colour="red") +
-  ylab("MSD (sigma^2)") +
+  ylab("MSDFC (sigma^2)") +
   xlab("Time (tau)")
 g
