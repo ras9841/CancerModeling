@@ -1,4 +1,4 @@
-OBJS = main.o cells.o simulation.o table.o
+OBJS = main.o cells.o simulation.o
 CC = g++
 CDEBUG = -g
 CFLAGS = -Wall -std=c++11 -c $(CDEBUG)
@@ -22,19 +22,11 @@ else
 	$(CC) $(CFLAGS) -DDEBUG=\"$(DEBUG)\" cells.cpp cells.hpp
 endif
 
-simulation.o : simulation.cpp simulation.hpp table.hpp
+simulation.o : simulation.cpp simulation.hpp 
 ifeq ($(DEBUG), off)
 	$(CC) $(CFLAGS) simulation.cpp simulation.hpp
 else
 	$(CC) $(CFLAGS) -DDEBUG=\"$(DEBUG)\" simulation.cpp simulation.hpp
-endif
-
-table.o : table.cpp table.hpp linked_list.hpp simulation.hpp
-ifeq ($(DEBUG), off)
-	$(CC) $(CFLAGS) table.cpp table.hpp linked_list.hpp simulation.hpp
-else
-	$(CC) $(CFLAGS) -DDEBUG=\"$(DEBUG)\" table.cpp table.hpp linked_list.hpp simulation.hpp
-
 endif
 
 clean:

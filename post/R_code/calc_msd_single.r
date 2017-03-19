@@ -8,10 +8,10 @@ library(ggplot2)
 
 
 # Read in data
-base <- "~/Documents/CancerModeling/outputs/slow-"
+base <- "~/Documents/CancerModeling/outputs/slowH-"
 data_location <- paste(base, 1, "_msd.csv", sep="")
 sim_data <- fread(data_location, sep="\t", header=FALSE, skip=4)
-num_sim <- 1
+num_sim <- 2
 
 time = unique(sim_data$V1)
 healthy_msd = numeric(length=length(time))
