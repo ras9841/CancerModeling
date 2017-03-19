@@ -6,8 +6,9 @@
 
 library(rgl)
 N <- 256
-Rb <-8.285953  # taken from debug output
-base <- "~/Documents/CancerModeling/outputs/slower-"
+Rb <-8.285953+.5  # taken from debug output
+#base <- "~/Documents/CancerModeling/outputs/diff_surf-"
+base <- "~/Downloads/CancerModeling-master/outputs/slow2-"
 data_location <- paste(base, 1, "_loc.csv", sep="")
 sim_data <- fread(data_location, sep="\t", header=FALSE, skip=4)
 

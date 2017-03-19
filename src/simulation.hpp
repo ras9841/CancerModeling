@@ -27,6 +27,9 @@ class Simulation {
     Params::DimensionlessQuants dq;
     const double pi = std::atan(1)*4.0;
 
+    // class
+    class Table;
+
     // methods
     void write_cell_loc(FILE *, double);
     void write_cell_msd(FILE *, double);
@@ -44,6 +47,7 @@ public:
             const char *name_dfc, Params::SysQuants sq, 
             Params::DimensionlessQuants dq);
     void run();
+    
 };
 
 #endif

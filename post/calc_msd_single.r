@@ -8,12 +8,12 @@ library(ggplot2)
 
 
 # Read in data
-base <- "~/Documents/CancerModeling/outputs/diff_surf-"
+base <- "~/Documents/CancerModeling/outputs/slow-"
 data_location <- paste(base, 1, "_msd.csv", sep="")
 sim_data <- fread(data_location, sep="\t", header=FALSE, skip=4)
-num_sim <- 2
+num_sim <- 1
 
-time = sim_data$V1
+time = unique(sim_data$V1)
 healthy_msd = numeric(length=length(time))
 cancer_msd = numeric(length=length(time))
 
@@ -28,10 +28,11 @@ healthy_msd <- healthy_msd/num_sim
 cancer_msd <- cancer_msd/num_sim
 
 # Plot Results
-df <- data.frame(time,healthy_msd,cancer_msd)
-g <-ggplot(df, aes(time)) +                  
-  geom_line(aes(y=healthy_msd), colour="blue") + 
-  geom_line(aes(y=cancer_msd), colour="red") +
+# Plot Results
+df <- data.frame(log(time),log(healthy_msd),log(cancer_msd))
+g <-ggplot(df, aes(log(time))) +                  
+  geom_line(aes(y=log(healthy_msd)), colour="blue") + 
+  geom_line(aes(y=log(cancer_msd)), colour="red") +
   ylab("MSD (sigma^2)") +
   xlab("Time (tau)")
 g

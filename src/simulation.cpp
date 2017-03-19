@@ -8,6 +8,7 @@
 
 // Imports
 #include "simulation.hpp"
+#include "table.hpp"
 #include <time.h>
 
 /// Constructor for a Simulation objection.
@@ -122,9 +123,9 @@ Simulation::Simulation(const char *name_loc, const char *name_msd,
 ///     time    --  current time in units of tau
 void Simulation::write_cell_loc(FILE *file, double time) { 
     for (unsigned int i=0; i<this->cells.size(); i++) {
-        fprintf(file, "%.6f\t%d\t", time, cells[i].id+1);
-        fprintf(file, "%s\t%.6f\t", cells[i].get_type(), cells[i].x);
-        fprintf(file, "%f\t%f\n", cells[i].y, cells[i].z);
+        fprintf(file, "%.6e\t%d\t", time, cells[i].id+1);
+        fprintf(file, "%s\t%e\t", cells[i].get_type(), cells[i].x);
+        fprintf(file, "%e\t%e\n", cells[i].y, cells[i].z);
     }
 }
 /// Updates the results file with the current state of the system.
@@ -151,7 +152,7 @@ void Simulation::write_cell_msd(FILE *file, double time) {
             count_C++;
         }
     }
-    fprintf(file, "%.6f\t%.6f\t%.6f\n", time, sum_msd_H/count_H, sum_msd_C/count_C);
+    fprintf(file, "%.6e\t%.6e\t%.6e\n", time, sum_msd_H/count_H, sum_msd_C/count_C);
 }
 
 /// Updates the results file with the current state of the system.
@@ -178,22 +179,27 @@ void Simulation::write_cell_dfc(FILE *file, double time) {
             count_C++;
         }
     }
-    fprintf(file, "%.6f\t%.6f\t%.6f\n", time, sum_dfc_H/count_H, sum_dfc_C/count_C);
+    fprintf(file, "%.6e\t%.6e\t%.6e\n", time, sum_dfc_H/count_H, sum_dfc_C/count_C);
 }
 
 /// Finds all cells in the current simulation state that are colliding.
 ///
-/// Current implementation in a brute force O(N^2) direct comparison. Collided 
-/// cells are added to the cells' adjacency list for future use in the force
-/// calculations.
+/*void Simulation::find_collisions(Simulation::Table table) {
+    for (int box=0; box<table.num_boxes; box++) {// for each box
+        Cell *c = table.boxes[box].popHead(); // grab the head of the list
+        while (c != nullptr) {
+
+            c = table.boxes[box].popHead();
+        }
+    }
+}
+*/
 void Simulation::find_collisions() {
     for (unsigned int i=0; i<this->cells.size(); i++) {
         cells[i].adjlst.clear();
         for (unsigned int j=0; j<this->cells.size(); j++) {
             if (i != j) {
-                if (cells[i].hits(cells[j])) {
-                    cells[i].adjlst.push_back(cells[j].id);
-                }
+                cells[i].adjlst.push_back(cells[j].id);
             }
         }
     }
@@ -227,9 +233,10 @@ void Simulation::calc_forces() {
             h = c1->R + c2.R - mag;
             R_star = (c1->R*c2.R)/(c1->R + c2.R);
             E_star = (4.0/3.0)*(c1->E*c2.E)/
-                ((1-pow(c1->nu,2))*c2.E+(1-pow(c2.nu,2))*c1->E);
-            F = E_star*sqrt(R_star)*pow(h,1.5) - 
-                sqrt(6*pi*sigma*E_star*pow(R_star,1.5)*pow(h,1.5));
+                ((1-c1->nu*c1->nu)*c2.E+(1-c2.nu*c2.nu)*c1->E);
+            // Adh - Rep
+            F = sqrt(6*pi*sigma*E_star*pow(R_star*h,1.5))
+                - E_star*sqrt(R_star)*pow(h,1.5);
             c1->Fx += F*(c2.x-c1->x)/mag;
             c1->Fy += F*(c2.y-c1->y)/mag;
             c1->Fz += F*(c2.z-c1->z)/mag;
@@ -347,14 +354,19 @@ void Simulation::run() {
     #endif
     int count = data_freq;
     double t = 0;
+
+    // Initialize table
+    //Simulation::Table table {this};
     while (t < dq.tf) {
         if (count == data_freq) { 
             write_cell_loc(loc_file, t); 
             write_cell_msd(msd_file, t); 
             write_cell_dfc(dfc_file, t); 
             count = 0;
-        } 
+        }
+        //table.add_cells();
         find_collisions();
+        //table.clear_table();
         calc_forces();
         update_locs();
         t += dq.dt;

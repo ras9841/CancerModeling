@@ -39,6 +39,7 @@ public:
     double phi;     // [0,pi]   (vp orientation)
     std::vector<int> adjlst;    // List of adjacent cells (collided)
     // methods
+    Cell() {};
     Cell(int id, CellType type, double x, double y, 
             double z, double theta, double phi,
 	    double radius, double e_mod, double poisson,
