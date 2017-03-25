@@ -185,14 +185,17 @@ void Simulation::write_cell_dfc(FILE *file, double time) {
 ///
 /// Current implementation in a brute force O(N^2) direct comparison. Collided 
 /// cells are added to the cells' adjacency list for future use in the force
-/// calculations.
-void Simulation::find_collisions() {
-    for (unsigned int i=0; i<this->cells.size(); i++) {
-        cells[i].adjlst.clear();
-        for (unsigned int j=0; j<this->cells.size(); j++) {
-            if (i != j) {
-                if (cells[i].hits(cells[j])) {
-                    cells[i].adjlst.push_back(cells[j].id);
+/// calculations. Since this uses the hastable, the method order is really
+/// O(N^(3/2))
+void Simulation::find_collisions(Table *table) {
+    for (int b=0; b<table->num_boxes; b++) { // For each box
+        if (table->boxes[b].size() > 1) { // If there are at least two cells
+            for (unsigned int i=0; i<table->boxes[b].size(); i++) { // Collide A
+                cells[i].adjlst.clear();
+                for (unsigned int j=0; j<this->cells.size(); j++) { // with B
+                    if (i != j && cells[i].hits(cells[j])) { // If they hit
+                            cells[i].adjlst.push_back(cells[j].id);
+                    }
                 }
             }
         }
@@ -248,64 +251,65 @@ void Simulation::update_locs() {
     for (unsigned int i=0; i<this->cells.size(); i++) {
         #ifdef DEBUG
         if (DEBUG == "brownian") {
-            cells[i].dXdt = (sq.u_length*sqrt(2.0/(sq.D*dq.dt*sq.u_time)))*norm_dist(rho_gen);
-            cells[i].dYdt = (sq.u_length*sqrt(2.0/(sq.D*dq.dt*sq.u_time)))*norm_dist(rho_gen);
-            cells[i].dZdt = (sq.u_length*sqrt(2.0/(sq.D*dq.dt*sq.u_time)))*norm_dist(rho_gen);
+            cells[i].dXdt = sqrt(2.0*sq.D/(sq.u_time*dq.dt))*norm_dist(rho_gen);
+            cells[i].dYdt = sqrt(2.0*sq.D/(sq.u_time*dq.dt))*norm_dist(rho_gen);
+            cells[i].dZdt = sqrt(2.0*sq.D/(sq.u_time*dq.dt))*norm_dist(rho_gen);
         }
         else if (DEBUG == "spp") {
-            cells[i].dXdt = (sq.u_length/sq.D)*(cells[i].self_prop*cos(cells[i].theta)*sin(cells[i].phi))/sqrt(3);
-            cells[i].dYdt = (sq.u_length/sq.D)*(cells[i].self_prop*sin(cells[i].theta)*sin(cells[i].phi))/sqrt(3);
-            cells[i].dZdt = (sq.u_length/sq.D)*(cells[i].self_prop*cos(cells[i].phi))/sqrt(3);
+            cells[i].dXdt = (cells[i].self_prop*cos(cells[i].theta)*sin(cells[i].phi))/sqrt(3);
+            cells[i].dYdt = (cells[i].self_prop*sin(cells[i].theta)*sin(cells[i].phi))/sqrt(3);
+            cells[i].dZdt = (cells[i].self_prop*cos(cells[i].phi))/sqrt(3);
         }
-        else {
+        else { // Debugging just for prints.
             // Apply JKR force 
-            cells[i].dXdt = (sq.u_length/sq.u_energy)*cells[i].Fx;
-            cells[i].dYdt = (sq.u_length/sq.u_energy)*cells[i].Fy;
-            cells[i].dZdt = (sq.u_length/sq.u_energy)*cells[i].Fz;
+            cells[i].dXdt = (sq.D/sq.u_energy)*cells[i].Fx;
+            cells[i].dYdt = (sq.D/sq.u_energy)*cells[i].Fy;
+            cells[i].dZdt = (sq.D/sq.u_energy)*cells[i].Fz;
         
             // Apply self propulsion
-            cells[i].dXdt += (sq.u_length/sq.D)*(cells[i].self_prop*cos(cells[i].theta)*sin(cells[i].phi))/sqrt(3);
-            cells[i].dYdt += (sq.u_length/sq.D)*(cells[i].self_prop*sin(cells[i].theta)*sin(cells[i].phi))/sqrt(3);
-            cells[i].dZdt += (sq.u_length/sq.D)*(cells[i].self_prop*cos(cells[i].phi))/sqrt(3);
+            cells[i].dXdt += (cells[i].self_prop*cos(cells[i].theta)*sin(cells[i].phi))/sqrt(3);
+            cells[i].dYdt += (cells[i].self_prop*sin(cells[i].theta)*sin(cells[i].phi))/sqrt(3);
+            cells[i].dZdt += (cells[i].self_prop*cos(cells[i].phi))/sqrt(3);
         
             // Apply diffusion
-            cells[i].dXdt += (sq.u_length*sqrt(2.0/(sq.D*dq.dt*sq.u_time)))*norm_dist(rho_gen);
-            cells[i].dYdt += (sq.u_length*sqrt(2.0/(sq.D*dq.dt*sq.u_time)))*norm_dist(rho_gen);
-            cells[i].dZdt += (sq.u_length*sqrt(2.0/(sq.D*dq.dt*sq.u_time)))*norm_dist(rho_gen);
+            cells[i].dXdt += sqrt(2.0*sq.D/(sq.u_time*dq.dt))*norm_dist(rho_gen);
+            cells[i].dYdt += sqrt(2.0*sq.D/(sq.u_time*dq.dt))*norm_dist(rho_gen);
+            cells[i].dZdt += sqrt(2.0*sq.D/(sq.u_time*dq.dt))*norm_dist(rho_gen);
         }
-        #else
+        #else // No debug mode specified
         // Apply JKR force 
-        cells[i].dXdt = (sq.u_length/sq.u_energy)*cells[i].Fx;
-        cells[i].dYdt = (sq.u_length/sq.u_energy)*cells[i].Fy;
-        cells[i].dZdt = (sq.u_length/sq.u_energy)*cells[i].Fz;
+        cells[i].dXdt = (sq.D/sq.u_energy)*cells[i].Fx;
+        cells[i].dYdt = (sq.D/sq.u_energy)*cells[i].Fy;
+        cells[i].dZdt = (sq.D/sq.u_energy)*cells[i].Fz;
         
         // Apply self propulsion
-        cells[i].dXdt += (sq.u_length/sq.D)*(cells[i].self_prop*cos(cells[i].theta)*sin(cells[i].phi))/sqrt(3);
-        cells[i].dYdt += (sq.u_length/sq.D)*(cells[i].self_prop*sin(cells[i].theta)*sin(cells[i].phi))/sqrt(3);
-        cells[i].dZdt += (sq.u_length/sq.D)*(cells[i].self_prop*cos(cells[i].phi))/sqrt(3);
+        cells[i].dXdt += (cells[i].self_prop*cos(cells[i].theta)*sin(cells[i].phi))/sqrt(3);
+        cells[i].dYdt += (cells[i].self_prop*sin(cells[i].theta)*sin(cells[i].phi))/sqrt(3);
+        cells[i].dZdt += (cells[i].self_prop*cos(cells[i].phi))/sqrt(3);
         
         // Apply diffusion
-        cells[i].dXdt += (sq.u_length*sqrt(2.0/(sq.D*dq.dt*sq.u_time)))*norm_dist(rho_gen);
-        cells[i].dYdt += (sq.u_length*sqrt(2.0/(sq.D*dq.dt*sq.u_time)))*norm_dist(rho_gen);
-        cells[i].dZdt += (sq.u_length*sqrt(2.0/(sq.D*dq.dt*sq.u_time)))*norm_dist(rho_gen);
+        cells[i].dXdt += sqrt(2.0*sq.D/(sq.u_time*dq.dt))*norm_dist(rho_gen);
+        cells[i].dYdt += sqrt(2.0*sq.D/(sq.u_time*dq.dt))*norm_dist(rho_gen);
+        cells[i].dZdt += sqrt(2.0*sq.D/(sq.u_time*dq.dt))*norm_dist(rho_gen);
         #endif
         
         // Update positions and orientations (forward euler)
-        xnew = cells[i].x + dq.dt*cells[i].dXdt;
-        ynew = cells[i].y + dq.dt*cells[i].dYdt;
-        znew = cells[i].z + dq.dt*cells[i].dZdt;
+        // This is where we remove the dimensions from the force calculations.
+        xnew = cells[i].x + dq.dt*(sq.u_time/sq.u_length)*cells[i].dXdt;
+        ynew = cells[i].y + dq.dt*(sq.u_time/sq.u_length)*cells[i].dYdt;
+        znew = cells[i].z + dq.dt*(sq.u_time/sq.u_length)*cells[i].dZdt;
 
         // Validity check: stay in sphere
         if ( pow(xnew,2)+pow(ynew,2)+pow(znew,2) < pow(dq.Rb,2))
         {
-            cells[i].x = cells[i].x + dq.dt*cells[i].dXdt;
-            cells[i].y = cells[i].y + dq.dt*cells[i].dYdt;
-            cells[i].z = cells[i].z + dq.dt*cells[i].dZdt;
+            cells[i].x = xnew;
+            cells[i].y = ynew;
+            cells[i].z = znew;
         }
 
         // Update theta and phi
-        cells[i].theta += dq.dt*(sq.u_length*sqrt(6/(sq.D*dq.dt*sq.u_time)))*norm_dist(theta_gen);
-        cells[i].phi += dq.dt*(sq.u_length*sqrt(6/(sq.D*dq.dt*sq.u_time)))*norm_dist(theta_gen);    
+        cells[i].theta += sqrt(6*sq.D*sq.u_time*dq.dt)*norm_dist(theta_gen)/sq.u_length;
+        cells[i].phi += sqrt(6*sq.D*sq.u_time*dq.dt)*norm_dist(theta_gen)/sq.u_length;
     }
 }
 
@@ -348,16 +352,19 @@ void Simulation::run() {
     #endif
     int count = data_freq;
     double t = 0;
+    Table table = Table(this);
     while (t < dq.tf) {
         if (count == data_freq) { 
             write_cell_loc(loc_file, t); 
             write_cell_msd(msd_file, t); 
             write_cell_dfc(dfc_file, t); 
             count = 0;
-        } 
-        find_collisions();
+        }
+        table.add_cells();
+        find_collisions(&table);
         calc_forces();
         update_locs();
+        table.clear_table();
         t += dq.dt;
         count++;
     }

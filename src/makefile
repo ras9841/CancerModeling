@@ -1,32 +1,42 @@
-OBJS = main.o cells.o simulation.o
+OBJS = main.o cells.o simulation.o table.o
 CC = g++
 CDEBUG = -g
 CFLAGS = -Wall -std=c++11 -c $(CDEBUG)
 LFLAGS = -Wall -lconfig++
 DEBUG = off
+CELL = cells.cpp cells.hpp
+TABLE = table.cpp table.hpp
+SIM = simulation.cpp simulation.hpp
 
 run : $(OBJS) 
 	$(CC) $(LFLAGS) $(OBJS) -o run
 
-main.o : main.cpp params.hpp 
+main.o : main.cpp params.hpp $(SIM)
 ifeq ($(DEBUG), off)
-	$(CC) $(CFLAGS) main.cpp params.hpp
+	$(CC) $(CFLAGS) main.cpp params.hpp $(SIM)
 else
-	$(CC) $(CFLAGS) -DDEBUG=\"$(DEBUG)\" main.cpp params.hpp
+	$(CC) $(CFLAGS) -DDEBUG=\"$(DEBUG)\" main.cpp params.hpp $(SIM)
 endif
 
-cells.o : cells.cpp cells.hpp 
+cells.o : $(CELL)
 ifeq ($(DEBUG), off)
-	$(CC) $(CFLAGS) cells.cpp cells.hpp
+	$(CC) $(CFLAGS) $(CELL)
 else
-	$(CC) $(CFLAGS) -DDEBUG=\"$(DEBUG)\" cells.cpp cells.hpp
+	$(CC) $(CFLAGS) -DDEBUG=\"$(DEBUG)\" $(CELL)
 endif
 
-simulation.o : simulation.cpp simulation.hpp 
+simulation.o : $(CELL) $(SIM) $(TABLE)
 ifeq ($(DEBUG), off)
-	$(CC) $(CFLAGS) simulation.cpp simulation.hpp
+	$(CC) $(CFLAGS) $(CELL) $(SIM) $(TABLE)
 else
-	$(CC) $(CFLAGS) -DDEBUG=\"$(DEBUG)\" simulation.cpp simulation.hpp
+	$(CC) $(CFLAGS) -DDEBUG=\"$(DEBUG)\" $(CELL) $(SIM) $(TABLE)
+endif
+
+table.o : $(CELL) $(SIM) $(TABLE)
+ifeq ($(DEBUG), off)
+	$(CC) $(CFLAGS) $(CELL) $(SIM) $(TABLE)
+else
+	$(CC) $(CFLAGS) -DDEBUG=\"$(DEBUG)\" $(CELL) $(SIM) $(TABLE)
 endif
 
 clean:

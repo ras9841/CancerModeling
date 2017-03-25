@@ -27,6 +27,7 @@ namespace Params {
         double surf_E_CC;   // g/s^2
         double poisson_H;   // 
         double poisson_C;   //
+        double vp;          // cm/s
     };
     struct DimensionlessQuants {
         double Rb;          // radius of the bounding sphere

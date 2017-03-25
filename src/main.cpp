@@ -98,12 +98,15 @@ int main(int argc, char *argv[]){
         r_healthy = config.lookup("Radius_H");
         r_cancer = config.lookup("Radius_C");
         sq.u_length = r_healthy+r_cancer; // Average diameter
-        sq.u_time = pow(sq.u_length, 2.0)/sq.D;
+        prop = config.lookup("Propulsion");
+        //sq.u_time = sq.u_length*sq.u_length/sq.D;
+        sq.u_time = sq.u_length/prop;
+        
         // These parameters should have units since the force calculation
         // addresses the scaling.
         sq.radius_H = r_healthy;
         sq.radius_C = r_cancer;
-        prop = config.lookup("Propulsion");
+        sq.vp = prop;
         sq.prop_H = prop*(double)config.lookup("Propulsion_H");
         sq.prop_C = prop*(double)config.lookup("Propulsion_C");
         sq.e_mod_H = config.lookup("Elastic_Mod_H");

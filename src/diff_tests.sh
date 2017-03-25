@@ -10,7 +10,7 @@ Tags[3]="diff_surf_E"
 #Configs[5]="diff_bulk_mod.cfg" 
 #Tags[5]="diff_bulk_mod" 
 Configs[4]="slow_H.cfg" 
-Tags[4]="slow_H" 
+Tags[4]="full" 
 
 NUM=4
 TESTS=10

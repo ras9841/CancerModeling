@@ -1,15 +1,19 @@
 #ifndef __TABLE__
 #define __TABLE__
-#include "simulation.hpp"
-#include "linked_list.hpp"
+#include <vector>       
 #include <math.h>
+#include "cells.hpp"
+#include "simulation.hpp"
 
-class Simulation::Table {
+class Simulation;
+
+class Table {
     // Attributes
     int num_rho;
     double scale;
     const double pi = std::atan(1)*4.0;
-    
+    Simulation *sim;
+
     // Methods
     void add_cell(Cell *c);
     double atan2(double y, double x);
@@ -20,11 +24,10 @@ class Simulation::Table {
 
     public:
         int num_boxes;
-        Simulation *sim;
         // Methods
         Table(Simulation *s);
         ~Table();
-        LinkedList<Cell*> *boxes;
+        std::vector<Cell*> *boxes;
         void add_cells();
         void clear_table();
 };

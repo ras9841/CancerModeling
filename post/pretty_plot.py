@@ -3,48 +3,19 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 
-def downsample(name, num):
-    time = np.loadtxt(name+"_time.txt")
-    hmsd = np.loadtxt(name+"_hmsd.txt")
-    cmsd = np.loadtxt(name+"_cmsd.txt")
-    hdfc = np.loadtxt(name+"_hdfc.txt")
-    cdfc = np.loadtxt(name+"_cdfc.txt")
-    
-    ntime = []
-    ncdfc = []
-    nhdfc = []
-    ncmsd = []
-    nhmsd = []
-    count = 0
-    while count < time.size:
-        if count%num == 0:
-            ntime.append(time[count])
-            ncdfc.append(cdfc[count])
-            nhdfc.append(hdfc[count])
-            ncmsd.append(cmsd[count])
-            nhmsd.append(hmsd[count])
-        count += 1
-    
-    np.savetxt(name+"_adj_time.txt",ntime,delimiter="\n")
-    np.savetxt(name+"_adj_hmsd.txt",nhmsd,delimiter="\n")
-    np.savetxt(name+"_adj_cmsd.txt",ncmsd,delimiter="\n")
-    np.savetxt(name+"_adj_hdfc.txt",nhdfc,delimiter="\n")
-    np.savetxt(name+"_adj_cdfc.txt",ncdfc,delimiter="\n")
-
-
-def av_dfc():
-    name = "long"
-    hdfc = np.loadtxt(name+"_hdfc.txt")
-    cdfc = np.loadtxt(name+"_cdfc.txt")
-    print("mh = %.3f +/- %.3f"%(np.mean(hdfc), np.std(hdfc)))
-    print("mc = %.3f +/- %.3f"%(np.mean(cdfc), np.std(cdfc)))
+def compute_velocity(time, dfc):
+    disp = np.sqrt(dfc)
+    vel = np.zeros(time.size)
+    for i in range(1,time.size):
+        vel[i] = (disp[i]-disp[i-1])/(time[i]-time[i-1])
+    return vel
 
 def run():
     bdir = os.path.dirname(__file__)
     base = os.path.join(bdir, '../outputs/')
 
-    N = 3
-    tests = ["slowH"]
+    N = 1
+    tests = ["many"]
     #tests = ["prop", "elast", "surf", "slow", "long_adj"]
     
     for name in tests:
@@ -73,11 +44,18 @@ def run():
         red = (204./256, 0, 0, .75)
         blue_l = (0, 0, 153./256, .3)
         
+        time = np.array([t for t in time])
+        h_msd = [h[0] for h in h_msd]
+        c_msd = [c[0] for c in c_msd]
+        h_dfc = [h[0] for h in h_dfc]
+        c_dfc = [c[0] for c in c_dfc]
+        
         plt.figure(name+" MSD");
         plt.plot(time, h_msd, "-", color=blue)
         plt.plot(time, c_msd, ".-", color=red)
         plt.grid()
-        plt.legend(["Healthy Population", "Cancer Population"])
+        plt.legend(["Healthy Population", "Cancer Population"],\
+               numpoints=1) 
         plt.xlabel(r'Time ($\tau$)')
         plt.ylabel(r'MSD ($\sigma^2$)')
 
@@ -88,7 +66,14 @@ def run():
         plt.legend(["Healthy Population", "Cancer Population"])
         plt.xlabel(r'Time ($\tau$)')
         plt.ylabel(r'MSDFC ($\sigma^2$)')
-        plt.show()
 
+        plt.figure(name+" Velocity");
+        plt.plot(time, compute_velocity(time,h_dfc), "-", color=blue_l)
+        plt.plot(time, compute_velocity(time,c_dfc), ".-", color=red)
+        plt.grid()
+        plt.legend(["Healthy Population", "Cancer Population"])
+        plt.xlabel(r'Time ($\tau$)')
+        plt.ylabel(r'Velocity ($\sigma/\tau$)')
+        plt.show()
 if __name__ == "__main__":
     run()
