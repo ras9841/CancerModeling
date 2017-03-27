@@ -10,13 +10,11 @@ def compute_velocity(time, dfc):
         vel[i] = (disp[i]-disp[i-1])/(time[i]-time[i-1])
     return vel
 
-def run():
+def run(num_tests, tests):
     bdir = os.path.dirname(__file__)
     base = os.path.join(bdir, '../outputs/')
 
-    N = 1
-    tests = ["many"]
-    #tests = ["prop", "elast", "surf", "slow", "long_adj"]
+    N = num_tests
     
     for name in tests:
         msd = np.loadtxt(base+name+"-%d_msd.csv"%(1), comments="#")
@@ -76,4 +74,4 @@ def run():
         plt.ylabel(r'Velocity ($\sigma/\tau$)')
         plt.show()
 if __name__ == "__main__":
-    run()
+    run(0, [])

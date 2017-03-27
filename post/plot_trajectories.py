@@ -4,13 +4,14 @@ from mpl_toolkits.mplot3d import Axes3D
 import numpy as np 
 import math
 
-def read_data(test):
-    hlocs = [[] for _ in range(128)]
-    clocs = [[] for _ in range(128)]
-    time = {}
+def read_data(N, test):
+    hlocs = [[] for _ in range(3)]
+    clocs = [[] for _ in range(3)]
 
     bdir = os.path.dirname(__file__)
     base = os.path.join(bdir, '../outputs/')
+    time = {} 
+    
     with open(base+test+"_loc.csv","r") as f:
         for _ in range(4): # skip header
             f.readline()
@@ -18,26 +19,27 @@ def read_data(test):
             t, cid, ctype, x, y, z = line.strip().split("\t")
             if t not in time.keys():
                 time[t] = float(t)
-            if ctype == "H":
-                hlocs[int(cid)-1].append((float(x), float(y), float(z)))
-            else:
-                clocs[int(cid)-1-128].append((float(x), float(y), float(z)))
-        return time.values(), hlocs, clocs
+    times = list(time.values())
+    times.sort()
+    times = [times[0], times[int(len(times)/2)] , times[-1]]
+    time_dict = {}
+    i = 0
+    for t in times:
+        time_dict[t] = i
+        i += 1
 
-def plot_cell_traj(ax, time, num, cells, sty):
-    xvals = []
-    yvals = []
-    zvals = []
-
-    for i in range(len(time)):
-        xvals.append(cells[num][i][0])
-        yvals.append(cells[num][i][1])
-        zvals.append(cells[num][i][2])
-
-    ax.scatter(xvals[0], yvals[0], zvals[0], color="g", s=100)
-    ax.plot(xvals, yvals, zvals, sty)
-    ax.scatter(xvals[-1], yvals[len(time)-1], zvals[-1], color="r", s=100)
-    return ax
+    with open(base+test+"_loc.csv","r") as f:
+        for _ in range(4): # skip header
+            f.readline()
+        for line in f:
+            t, cid, ctype, x, y, z = line.strip().split("\t")
+            if float(t) in times:
+                i = time_dict[float(t)] 
+                if ctype == "H":
+                    hlocs[i].append([float(x), float(y), float(z)])
+                else:
+                    clocs[i].append([float(x), float(y), float(z)])
+    return times, hlocs, clocs
 
 def plot_sphere(ax, R):
     x = []
@@ -49,22 +51,39 @@ def plot_sphere(ax, R):
             y.append(R*math.sin(theta)*math.sin(phi))
             z.append(R*math.cos(phi))
     ax.plot_wireframe(x,y,z, color="k", alpha=.3)
+    return ax
 
-def run():
-    R  = 8.3
-    time, hlocs, clocs = read_data("slowH-1")
-    cell_num = 0
-    fig = plt.figure()
-    ax = fig.add_subplot(111, projection="3d")
-    ax.set_aspect("equal")
-    ax = plot_cell_traj(ax, list(time), 0, clocs, "m-")
-    ax = plot_cell_traj(ax, list(time), 5, clocs, "m-")
-    ax = plot_cell_traj(ax, list(time), 10, clocs, "m-")
-    #ax = plot_cell_traj(ax, list(time), 0, hlocs, "b-")
-    #ax = plot_cell_traj(ax, list(time), 5, hlocs, "b-")
-    #ax = plot_cell_traj(ax, list(time), 10, hlocs, "b-")
-    ax = plot_sphere(ax, R)
-    plt.show()
+def plot_cells(ax, cells, color):
+    get_x = lambda x: x[0]
+    get_y = lambda x: x[1]
+    get_z = lambda x: x[2]
+    xvals = list(map(get_x, cells))
+    yvals = list(map(get_y, cells))
+    zvals = list(map(get_z, cells))
+    ax.scatter(xvals, yvals, zvals, color=color, s=50)
+    return ax
+
+def run(N, pac_frac, test_names): 
+    blue = (0,0,153./250., .80)
+    red = (204./256.,0,0., .80)
+
+    for name in test_names:
+        times, hlocs, clocs = read_data(N, name+"-1")
+        R = (4*N/pac_frac)**(1./3.)+.5
+
+        for i in range(3):
+            fig = plt.figure()
+            ax = fig.add_subplot(111, projection="3d")
+            ax.set_aspect("equal")
+            ax = plot_sphere(ax, R)
+            ax = plot_cells(ax, hlocs[i], blue)
+            ax = plot_cells(ax, clocs[i], red)
+            ax.set_title(r'Locations at t=%.3f$\tau$'%(times[i]))
+            plt.legend(['Bounding Sphere', 'Healthy Cell', 'Cancer Cell'], loc=3)
+            plt.grid('off')
+            plt.axis('off')
+            plt.show()
 
 if __name__ == "__main__":
-    run()
+    #run(128, .9, ["slow_hash"])
+    run(1000, .9, ["many"])
