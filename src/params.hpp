@@ -33,6 +33,8 @@ namespace Params {
         double Rb;          // radius of the bounding sphere
         double dt;          // time step (tau)
         double tf;          // simulation duration (tau)
+        double hdiv;        // H division rate in tau
+        double cdiv;        // C division rate in tau
     };
 }
 

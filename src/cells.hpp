@@ -17,10 +17,10 @@ class Cell {
     CellType type;
 public:
     // Physcal attributes (these have units)
-    double R;               //  radius
-    double E;               //  elastic modulus
-    double nu;               //  poisson number
-    double self_prop;              //  surface energy 
+    double R;                   //  radius
+    double E;                   //  elastic modulus
+    double nu;                  //  poisson number
+    double self_prop;           //  surface energy 
     // Other attributes
     int id;
     double x0;
@@ -39,6 +39,7 @@ public:
     double phi;     // [0,pi]   (vp orientation)
     std::vector<int> adjlst;    // List of adjacent cells (collided)
     // methods
+    Cell() {};
     Cell(int id, CellType type, double x, double y, 
             double z, double theta, double phi,
 	    double radius, double e_mod, double poisson,

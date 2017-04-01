@@ -67,7 +67,11 @@ Table::Table(Simulation *sim){
     for (int i=0; i<this->num_rho; i++) {
         this->num_boxes += num_theta(i)*num_phi(i);
     }
-    this->boxes = new std::vector<Cell*>[num_boxes];
+    this->boxes = std::vector<std::vector<Cell*>>(num_boxes);
+    //this->boxes.reserve(num_boxes);
+    //for (int i=0; i<num_boxes; i++) {
+    //    boxes[i] = std::vector<Cell*>();
+    //}
 }
 
 void Table::add_cell(Cell *c) {
@@ -102,7 +106,11 @@ void Table::add_cells(){
 
 Table::~Table(){
     for (int i=0; i<num_boxes; i++){
+        for (unsigned int j=0; j< boxes[i].size(); j++) {
+            delete boxes[i][j];
+        }
         boxes[i].clear();
     }
+    boxes.clear();
 }
 

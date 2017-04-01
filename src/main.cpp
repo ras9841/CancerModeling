@@ -87,6 +87,7 @@ int main(int argc, char *argv[]){
     Params::SysQuants sq;
     Params::DimensionlessQuants dq;
     double Kb, Temp, pac_frac, r_healthy, r_cancer, surf_E, prop, blk_mod;
+    double hdiv, cdiv;
     try {
         // Process scaling parameters
         sq.num_points = config.lookup("Number_Of_Data_Points");
@@ -125,6 +126,10 @@ int main(int argc, char *argv[]){
         dq.Rb = cbrt((4*sq.N)/pac_frac); // make unitless by dividing by diam
         dq.dt = config.lookup("Time_Step"); // already unitless
         dq.tf = config.lookup("Simulation_Duration"); // already unitless
+        hdiv = (double)config.lookup("Division_Rate_H")*3600;   // now in seconds
+        dq.hdiv = hdiv/sq.u_time;                       // now unitless
+        cdiv = (double)config.lookup("Division_Rate_C")*3600;   // now in seconds
+        dq.cdiv = cdiv/sq.u_time;                       // now unitless
     }
     catch (const libconfig::SettingNotFoundException &snf)
     {

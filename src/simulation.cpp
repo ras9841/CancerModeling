@@ -42,6 +42,7 @@ Simulation::Simulation(const char *name_loc, const char *name_msd,
     this->dfc_name = name_dfc;
     this->sq = sq;
     this->dq = dq;
+    this->pop_size = 2*sq.N;
 
     // Setup Simulation
     unsigned int base = time(NULL);
@@ -57,7 +58,7 @@ Simulation::Simulation(const char *name_loc, const char *name_msd,
     for (int i = 0; i<sq.N; i++) { 
         rho_vals[i] = R*cbrt(dist(gen)); 
     } 
-    gen.seed(base+1); // C
+    //gen.seed(base+1); // C
     for (int i = sq.N; i<2*sq.N; i++) { 
         rho_vals[i] = R*cbrt(dist(gen)); 
     } 
@@ -65,11 +66,11 @@ Simulation::Simulation(const char *name_loc, const char *name_msd,
     // Generate theta values
     double theta_vals[2*sq.N];
     
-    gen.seed(base+2); // H
+    //gen.seed(base+2); // H
     for (int i = 0; i<sq.N; i++) { 
         theta_vals[i] = 2*pi*dist(gen); 
     } 
-    gen.seed(base+3); // C
+    //gen.seed(base+3); // C
     for (int i = sq.N; i<2*sq.N; i++) { 
         theta_vals[i] = 2*pi*dist(gen); 
     } 
@@ -77,19 +78,19 @@ Simulation::Simulation(const char *name_loc, const char *name_msd,
     // Generate phi values
     double phi_vals[2*sq.N];
     
-    gen.seed(base+4); // H
+    //gen.seed(base+4); // H
     for (int i = 0; i<sq.N; i++) { 
         phi_vals[i] = acos(1-2*dist(gen)); 
     } 
-    gen.seed(base+5); // C
+    //gen.seed(base+5); // C
     for (int i = sq.N; i<2*sq.N; i++) { 
         phi_vals[i] = acos(1-2*dist(gen)); 
     } 
 
     // Setup distributions for vp orientations
-    this->theta_gen.seed(base+6);
-    this->phi_gen.seed(base+7);
-    this->rho_gen.seed(base+8);
+    this->theta_gen.seed(base+1);
+    this->phi_gen.seed(base+2);
+    this->rho_gen.seed(base+3);
 
     double x, y, z;
     for (int i = 0; i<sq.N; i++) { // Healthy
@@ -227,8 +228,8 @@ void Simulation::calc_forces() {
                 sigma = sq.surf_E_HC;
             }
             mag = c1->distance_to(c2);
-            h = c1->R + c2.R - mag;
-            R_star = (c1->R*c2.R)/(c1->R + c2.R);
+            h = sq.u_length*(c1->R + c2.R - mag); // put in units of length
+            R_star = sq.u_length*(c1->R*c2.R)/(c1->R + c2.R); // put in units of length
             E_star = (4.0/3.0)*(c1->E*c2.E)/
                 ((1-pow(c1->nu,2))*c2.E+(1-pow(c2.nu,2))*c1->E);
             // Adh - Rep
@@ -313,7 +314,36 @@ void Simulation::update_locs() {
     }
 }
 
-/// Logic for running the simulation
+/// Logic for dividing cells.
+/// 
+/// Each cell in the simulation is checked for the specified type. If the cell
+/// is of the correct type, it is split into two daughter cells of the same 
+/// size, each with a velocity half the initial velocity. The two cells are
+/// possitioned a distance sigma/2 appart, where sigma is the unit length.
+void Simulation::divide_cells(CellType T){
+    Cell c, cnew;
+    double off = 1.73205; // sqrt(3)*sigma, roughly
+    double mag;
+    double xn, yn, zn;
+    unsigned int N = cells.size();
+    for (unsigned int i=0; i<N; i++) {
+        if (cells[i].is_type(T)) { // Divide
+            c = this->cells[i];
+            mag = c.get_rho();
+            xn = (1-off/mag)*c.x;
+            yn = (1-off/mag)*c.y;
+            zn = (1-off/mag)*c.z;
+            
+            cnew = Cell(pop_size, T, xn, yn, zn, c.theta, c.phi, c.R, c.E, c.nu, 
+                    c.self_prop);
+            this->cells.push_back(cnew);
+            this->pop_size += 1;
+        }
+    }
+}
+
+
+/// Logic for running the simulation.
 /// 
 /// Creates the filename used to write out particle position. This includes 
 /// opening and closing the file pointer. Order of operations: (1) write out
@@ -350,8 +380,13 @@ void Simulation::run() {
     printf("\n### Starting simulation.\n");
     printf("Taking data every %d steps for %d steps.\n", data_freq, total);
     #endif
-    int count = data_freq;
-    double t = 0;
+    
+    // Set up loop counters
+    int count = data_freq;      // Used to write out data
+    double t = 0;               // Keeps track of time
+    double h_div = 0;           // Keeps track of healthy division
+    double c_div = 0;           // Keeps track of cancer division
+    
     Table table = Table(this);
     while (t < dq.tf) {
         if (count == data_freq) { 
@@ -365,8 +400,26 @@ void Simulation::run() {
         calc_forces();
         update_locs();
         table.clear_table();
+
+        // Check for division
+        if (h_div >= dq.hdiv) { 
+            printf("HEALTHY DIVISION @ t = %.f\n", t);
+            divide_cells(H);
+            printf("Current Population size = %d\n", this->pop_size);
+            h_div = 0; // reset
+        }
+        if (c_div >= dq.cdiv) { 
+            printf("CANCER  DIVISION @ t = %.f\n", t);
+            divide_cells(C);
+            printf("Current Population size = %d\n", this->pop_size);
+            c_div = 0; // reset
+        }
+
+        // Update counters
         t += dq.dt;
         count++;
+        h_div += dq.dt;
+        c_div += dq.dt;
     }
     write_cell_loc(loc_file, t); 
     write_cell_msd(msd_file, t); 

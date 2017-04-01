@@ -26,6 +26,7 @@ class Simulation {
     std::default_random_engine phi_gen;
     std::default_random_engine rho_gen;
     const double pi = std::atan(1)*4.0;
+    int pop_size;
 
     // methods
     void write_cell_loc(FILE *, double);
@@ -34,6 +35,7 @@ class Simulation {
     void find_collisions(Table *t);
     void calc_forces();
     void update_locs();
+    void divide_cells(CellType T);
 public:
     // attributes
     const char *loc_name;

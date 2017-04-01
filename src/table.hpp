@@ -27,7 +27,7 @@ class Table {
         // Methods
         Table(Simulation *s);
         ~Table();
-        std::vector<Cell*> *boxes;
+        std::vector<std::vector<Cell*>> boxes;
         void add_cells();
         void clear_table();
 };
