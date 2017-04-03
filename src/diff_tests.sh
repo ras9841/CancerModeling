@@ -9,11 +9,13 @@ Configs[3]="diff_surf_E.cfg"
 Tags[3]="diff_surf_E" 
 #Configs[5]="diff_bulk_mod.cfg" 
 #Tags[5]="diff_bulk_mod" 
-Configs[4]="slow_H.cfg" 
+Configs[4]="full.cfg" 
 Tags[4]="full" 
+Configs[5]="full_div.cfg"
+Tags[5]="division"
 
-NUM=4
-TESTS=10
+NUM=5
+TESTS=3
 
 for ((i=1; i<=$NUM; i++ ))
 do

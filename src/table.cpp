@@ -41,7 +41,7 @@ double Table::atan2(double y, double x) {
 double Table::delta_phi(int i) {
     // dt = 1/[(i+1)*sqrt(i^2+2i+2)]
     // N = round(pi/dt)
-e   return this->pi/ROUND(this->pi*(i+1.0)*sqrt(i*i+2*i+2.0));
+    return this->pi/ROUND(this->pi*(i+1.0)*sqrt(i*i+2*i+2.0));
 }
 
 double Table::delta_theta(int i) {
