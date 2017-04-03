@@ -248,7 +248,7 @@ void Simulation::calc_forces() {
 /// motion, self-propulsion, cell-cell adhession, and cell-cell repulsion. The
 /// numerical integration is done with Forward Euler O(dt).
 void Simulation::update_locs() {
-    double xnew, ynew, znew;
+    double xnew, ynew, znew, theta_new, phi_new, P, F, xs, ys, zs, mag_new;
     for (unsigned int i=0; i<this->cells.size(); i++) {
         #ifdef DEBUG
         if (DEBUG == "brownian") {
@@ -299,18 +299,41 @@ void Simulation::update_locs() {
         xnew = cells[i].x + dq.dt*(sq.u_time/sq.u_length)*cells[i].dXdt;
         ynew = cells[i].y + dq.dt*(sq.u_time/sq.u_length)*cells[i].dYdt;
         znew = cells[i].z + dq.dt*(sq.u_time/sq.u_length)*cells[i].dZdt;
+        mag_new = sqrt(pow(xnew,2)+pow(ynew,2)+pow(znew,2));
 
         // Validity check: stay in sphere
-        if ( pow(xnew,2)+pow(ynew,2)+pow(znew,2) < pow(dq.Rb,2))
+        if ( mag_new < dq.Rb)
         {
             cells[i].x = xnew;
             cells[i].y = ynew;
             cells[i].z = znew;
         }
+        else { // Deal with elastic collision
+            // Find point on sphere
+            xs = dq.Rb*(xnew/mag_new);
+            ys = dq.Rb*(ynew/mag_new);
+            zs = dq.Rb*(znew/mag_new);
+            // Calculate P (projector)
+            P = (cells[i].x*xs+cells[i].y*ys+cells[i].z*zs)/(cells[i].get_rho()*dq.Rb);
+            // Calculate F (reflector)
+            F = 1-2*P;
+            // Reflect cell's r through r0
+            cells[i].x = F*cells[i].x;
+            cells[i].y = F*cells[i].y;
+            cells[i].z = F*cells[i].z;
+        }
 
         // Update theta and phi
-        cells[i].theta += sqrt(6*sq.D*sq.u_time*dq.dt)*norm_dist(theta_gen)/sq.u_length;
-        cells[i].phi += sqrt(6*sq.D*sq.u_time*dq.dt)*norm_dist(theta_gen)/sq.u_length;
+        theta_new = cells[i].theta + sqrt(6*sq.D*sq.u_time*dq.dt)*norm_dist(theta_gen)/sq.u_length;
+        phi_new = cells[i].phi + sqrt(6*sq.D*sq.u_time*dq.dt)*norm_dist(theta_gen)/sq.u_length;
+        if (theta_new > 2*pi) {
+            theta_new -= 2*pi;
+        }
+        if (phi_new > pi) {
+            phi_new = 2*pi - phi_new;
+        }
+        cells[i].theta = theta_new;
+        cells[i].phi = phi_new;
     }
 }
 

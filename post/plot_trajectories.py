@@ -78,8 +78,9 @@ def run(N, pac_frac, test_names):
             ax = plot_sphere(ax, R)
             ax = plot_cells(ax, hlocs[i], blue)
             ax = plot_cells(ax, clocs[i], red)
-            ax.set_title(r'Locations at t=%.3f$\tau$'%(times[i]))
-            plt.legend(['Bounding Sphere', 'Healthy Cell', 'Cancer Cell'], loc=3)
+            ax.set_title(r'Locations at t=%d$\tau$'%(times[i]))
+            #plt.legend(['Bounding Sphere', 'Healthy Cell', 'Cancer Cell'],
+            #        loc=5)
             plt.grid('off')
             plt.axis('off')
             plt.show()

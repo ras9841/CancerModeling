@@ -58,7 +58,7 @@ def run(num_tests, tests):
         plt.ylabel(r'MSD ($\sigma^2$)')
 
         plt.figure(name+" DFC");
-        plt.plot(time, h_dfc, "-", color=blue_l)
+        plt.plot(time, h_dfc, "-", color=blue)
         plt.plot(time, c_dfc, ".-", color=red)
         plt.grid()
         plt.legend(["Healthy Population", "Cancer Population"])
