@@ -227,11 +227,11 @@ void Simulation::calc_forces() {
             else {
                 sigma = sq.surf_E_HC;
             }
-            mag = c1->distance_to(c2);
-            h = sq.u_length*(c1->R + c2.R - mag); // put in units of length
-            R_star = sq.u_length*(c1->R*c2.R)/(c1->R + c2.R); // put in units of length
+            mag = sq.u_length*(c1->distance_to(c2));
+            h = c1->R + c2.R - mag;
+            R_star = (c1->R*c2.R)/(c1->R + c2.R);
             E_star = (4.0/3.0)*(c1->E*c2.E)/
-                ((1-pow(c1->nu,2))*c2.E+(1-pow(c2.nu,2))*c1->E);
+                ((1-(c1->nu*c1->nu))*c2.E+(1-(c2.nu*c2.nu))*c1->E);
             // Adh - Rep
             F = sqrt(6*pi*sigma*E_star*pow(R_star,1.5)*pow(h,1.5))
                 - E_star*sqrt(R_star)*pow(h,1.5); 
@@ -345,18 +345,18 @@ void Simulation::update_locs() {
 /// possitioned a distance sigma/2 appart, where sigma is the unit length.
 void Simulation::divide_cells(CellType T){
     Cell c, cnew;
-    double off = 1.73205; // sqrt(3)*sigma, roughly
-    double mag;
+    double R; 
     double xn, yn, zn;
     unsigned int N = cells.size();
     for (unsigned int i=0; i<N; i++) {
         if (cells[i].is_type(T)) { // Divide
             c = this->cells[i];
-            mag = c.get_rho();
-            xn = (1-off/mag)*c.x;
-            yn = (1-off/mag)*c.y;
-            zn = (1-off/mag)*c.z;
-            
+            R = c.R;
+            xn = c.x+R;
+            yn = c.y+R;
+            zn = sqrt(R*R- (c.x+R)*(c.x+R) - (c.y+R)*(c.y+R)); 
+            zn = c.z > 0 ? c.z : -c.z;
+
             cnew = Cell(pop_size, T, xn, yn, zn, c.theta, c.phi, c.R, c.E, c.nu, 
                     c.self_prop);
             this->cells.push_back(cnew);

@@ -8,7 +8,7 @@ def compute_velocity(time, dfc):
     vel = np.zeros(time.size)
     for i in range(1,time.size):
         vel[i] = (disp[i]-disp[i-1])/(time[i]-time[i-1])
-    return vel
+    return abs(vel)
 
 def run(num_tests, tests):
     bdir = os.path.dirname(__file__)
@@ -71,7 +71,7 @@ def run(num_tests, tests):
         plt.grid()
         plt.legend(["Healthy Population", "Cancer Population"])
         plt.xlabel(r'Time ($\tau$)')
-        plt.ylabel(r'Velocity ($\sigma/\tau$)')
+        plt.ylabel(r'|Velocity| ($\sigma/\tau$)')
         plt.show()
 if __name__ == "__main__":
     run(0, [])
