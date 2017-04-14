@@ -63,27 +63,42 @@ def plot_cells(ax, cells, color):
     ax.scatter(xvals, yvals, zvals, color=color, s=50)
     return ax
 
+def get_rho(cells):
+    get_x = lambda x: x[0]
+    get_y = lambda x: x[1]
+    get_z = lambda x: x[2]
+    xvals = np.array(list(map(get_x, cells)))
+    yvals = np.array(list(map(get_y, cells)))
+    zvals = np.array(list(map(get_z, cells)))
+    return  np.sqrt(xvals**2+yvals**2+zvals**2)
+
 def run(N, pac_frac, test_names): 
-    blue = (0,0,153./250., .80)
-    red = (204./256.,0,0., .80)
+    blue = (0,0,153./250., .50)
+    red = (204./256.,0,0., .50)
 
     for name in test_names:
         times, hlocs, clocs = read_data(N, name+"-1")
         R = (4*N/pac_frac)**(1./3.)+.5
 
         for i in range(3):
-            fig = plt.figure()
+            fig = plt.figure(name+" locs @ "+str(times[i]))
             ax = fig.add_subplot(111, projection="3d")
             ax.set_aspect("equal")
             ax = plot_sphere(ax, R)
             ax = plot_cells(ax, hlocs[i], blue)
             ax = plot_cells(ax, clocs[i], red)
             ax.set_title(r'Locations at t=%d$\tau$'%(times[i]))
-            #plt.legend(['Bounding Sphere', 'Healthy Cell', 'Cancer Cell'],
-            #        loc=5)
             plt.grid('off')
             plt.axis('off')
-            plt.show()
+            plt.figure(name+" dist @ "+str(times[i]))
+            bins = np.arange(0,R,.25)
+            plt.hist(get_rho(hlocs[i]), bins, color=blue, label='Healthy', \
+                    normed=1)
+            plt.hist(get_rho(clocs[i]), bins, color=red, label='Cancer', \
+                    normed=1)
+            plt.legend(loc='upper left')
+            plt.title(r'$\rho$ Distribution t=%d$\tau$'%(times[i]))
+    plt.show()
 
 if __name__ == "__main__":
     #run(128, .9, ["slow_hash"])

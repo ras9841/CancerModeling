@@ -8,6 +8,7 @@ CELL = cells.cpp cells.hpp
 TABLE = table.cpp table.hpp
 SIM = simulation.cpp simulation.hpp
 
+
 run : $(OBJS) 
 	$(CC) $(LFLAGS) $(OBJS) -o run
 

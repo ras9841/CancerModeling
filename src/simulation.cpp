@@ -248,7 +248,9 @@ void Simulation::calc_forces() {
 /// motion, self-propulsion, cell-cell adhession, and cell-cell repulsion. The
 /// numerical integration is done with Forward Euler O(dt).
 void Simulation::update_locs() {
-    double xnew, ynew, znew, theta_new, phi_new, P, F, xs, ys, zs, mag_new;
+    double xnew, ynew, znew, xs, ys, zs, x_par, y_par, z_par;
+    double theta_new, phi_new, P, mag_new, mag_s;
+
     for (unsigned int i=0; i<this->cells.size(); i++) {
         #ifdef DEBUG
         if (DEBUG == "brownian") {
@@ -307,31 +309,42 @@ void Simulation::update_locs() {
             cells[i].x = xnew;
             cells[i].y = ynew;
             cells[i].z = znew;
-        }
+
+            // Compute theta and phi
+            theta_new = cells[i].theta + sqrt(6*sq.D*sq.u_time*dq.dt)*norm_dist(theta_gen)/sq.u_length;
+            phi_new = cells[i].phi + sqrt(6*sq.D*sq.u_time*dq.dt)*norm_dist(theta_gen)/sq.u_length;
+            if (theta_new > 2*pi) {
+                theta_new -= 2*pi;
+            }
+            if (phi_new > pi) {
+                phi_new = 2*pi - phi_new;   
+            }
+        }        
         else { // Deal with elastic collision
             // Find point on sphere
             xs = dq.Rb*(xnew/mag_new);
             ys = dq.Rb*(ynew/mag_new);
             zs = dq.Rb*(znew/mag_new);
-            // Calculate P (projector)
-            P = (cells[i].x*xs+cells[i].y*ys+cells[i].z*zs)/(cells[i].get_rho()*dq.Rb);
-            // Calculate F (reflector)
-            F = 1-2*P;
+            // Calculate r0 dot rs
+            P = (xs*cells[i].x+ys*cells[i].y+zs*cells[i].z);
+            
+            // Calculate r_par 
+            x_par = P*xs/(dq.Rb*cells[i].get_rho());
+            y_par = P*ys/(dq.Rb*cells[i].get_rho());
+            z_par = P*zs/(dq.Rb*cells[i].get_rho());
+            
             // Reflect cell's r through r0
-            cells[i].x = F*cells[i].x;
-            cells[i].y = F*cells[i].y;
-            cells[i].z = F*cells[i].z;
+            cells[i].x += 2*(x_par-cells[i].x);
+            cells[i].y += 2*(y_par-cells[i].y);
+            cells[i].z += 2*(z_par-cells[i].z);
+            
+            mag_s = sqrt(pow(cells[i].x-xs,2)+pow(cells[i].y-ys,2)+pow(cells[i].z-zs,2));
+            // Update phi and theta
+            theta_new = atan2(cells[i].y-ys, cells[i].x-xs) + 3.1415926;
+            phi_new = acos((cells[i].z-zs)/mag_s);
         }
 
         // Update theta and phi
-        theta_new = cells[i].theta + sqrt(6*sq.D*sq.u_time*dq.dt)*norm_dist(theta_gen)/sq.u_length;
-        phi_new = cells[i].phi + sqrt(6*sq.D*sq.u_time*dq.dt)*norm_dist(theta_gen)/sq.u_length;
-        if (theta_new > 2*pi) {
-            theta_new -= 2*pi;
-        }
-        if (phi_new > pi) {
-            phi_new = 2*pi - phi_new;
-        }
         cells[i].theta = theta_new;
         cells[i].phi = phi_new;
     }
