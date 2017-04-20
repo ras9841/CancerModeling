@@ -1,0 +1,35 @@
+Running pf99_7500 1 ...
+### Using ../inputs/full2.cfg to determine simulation parameters
+### Writing cell locations to ../outputs/pf99_7500-1_loc.csv 
+### Writing cell MSD values to ../outputs/pf99_7500-1_msd.csv 
+### Writing cell DFC values to ../outputs/pf99_7500-1_dfc.csv 
+Completed.
+
+Running pf99_7500 2 ...
+### Using ../inputs/full2.cfg to determine simulation parameters
+### Writing cell locations to ../outputs/pf99_7500-2_loc.csv 
+### Writing cell MSD values to ../outputs/pf99_7500-2_msd.csv 
+### Writing cell DFC values to ../outputs/pf99_7500-2_dfc.csv 
+Completed.
+
+Running pf99_7500 3 ...
+### Using ../inputs/full2.cfg to determine simulation parameters
+### Writing cell locations to ../outputs/pf99_7500-3_loc.csv 
+### Writing cell MSD values to ../outputs/pf99_7500-3_msd.csv 
+### Writing cell DFC values to ../outputs/pf99_7500-3_dfc.csv 
+Completed.
+
+Running pf99_7500 4 ...
+### Using ../inputs/full2.cfg to determine simulation parameters
+### Writing cell locations to ../outputs/pf99_7500-4_loc.csv 
+### Writing cell MSD values to ../outputs/pf99_7500-4_msd.csv 
+### Writing cell DFC values to ../outputs/pf99_7500-4_dfc.csv 
+Completed.
+
+Running pf99_7500 5 ...
+### Using ../inputs/full2.cfg to determine simulation parameters
+### Writing cell locations to ../outputs/pf99_7500-5_loc.csv 
+### Writing cell MSD values to ../outputs/pf99_7500-5_msd.csv 
+### Writing cell DFC values to ../outputs/pf99_7500-5_dfc.csv 
+Completed.
+

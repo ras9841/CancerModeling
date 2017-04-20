@@ -123,7 +123,7 @@ int main(int argc, char *argv[]){
 
         // Process remaining settings and create a dimensionless structure
         pac_frac = config.lookup("Packing_Fraction");
-        dq.Rb = cbrt((4*sq.N)/pac_frac); // make unitless by dividing by diam
+        dq.Rb = cbrt(sq.N/(4*pac_frac)); // make unitless by dividing by diam
         dq.dt = config.lookup("Time_Step"); // already unitless
         dq.tf = config.lookup("Simulation_Duration"); // already unitless
         hdiv = (double)config.lookup("Division_Rate_H")*3600;   // now in seconds
